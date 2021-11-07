@@ -1,12 +1,8 @@
 #!/usr/bin/python3
 
-
 import json
 import sys
 import os
-
-#print("content-type: text/html\n\n")
-#print(os.environ)
 
 from bugge.bugge import Bugge
 from bugge.bugge import DB_wrap
