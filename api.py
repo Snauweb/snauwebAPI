@@ -1,94 +1,32 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+import json
+import psycopg2
+import sys
 
-# Versjon 1 av snauwebs api
-# Dette scriptet kjøres av apache når det requestes gjennom CGI
-# CGI definerer en rekke headere som gir tilgang på brukernavn,
-# requesttype, querystreng og mer. RFC 3875 definerer alle mulige
-# headere, lenke: https://datatracker.ietf.org/doc/html/rfc3875
-import os
-from db_handler import DB_handler
+from bugge.bugge import Bugge
+from bugge.bugge import DB_wrap
 
-# The debug flag can be overridden by the config file
-DEBUG = False
-CONFIG_FILE_LOCATION = "../../configs/config.txt"
+bugge = Bugge()
+bugge.read_config("./.config")
+bugge.init_DB()
+cursor = bugge.get_DB_cursor()
+cursor.execute("select * from forslag")
+for row in cursor:
+    print(row)
 
-# We assume all inputs and files are in order
-# if not it crashes and burns
-def read_config(config_dict, config_location):
+""" def db(databaseName='d77uck12p6lknh'):
+    return psycopg2.connect(database=databaseName)
 
-    config_file_handle = open(config_location, 'r')
-    config_file_lines = config_file_handle.readlines()
+def query_db(query, args=(), one=False):
+    cur = db().cursor()
+    cur.execute(query, args)
+    r = [dict((cur.description[i][0], value)
+        for i, value in enumerate(row)) for row in cur.fetchall()]
 
-    for line in config_file_lines:
-        [key, value] = line.split("=")
-        value = value.strip('\n')
-        config_dict[key] = value;
+    cur.connection.close()
+    return (r[0] if r else None) if one else r
 
-    print("debug" in config_dict)
-    if("debug" in config_dict):
-        global DEBUG # Tell python we want to update the global variable DEBUG
-        if(config_dict["debug"] == "true"):
-            DEBUG = True;
-        else:
-            DEBUG = False;
-        
-# Dummy env_vars in case of debug
-def read_env_vars(env_var_dict):
-    if(DEBUG):
-        env_var_dict["REMOTE_USER"] = "testuser"
-        env_var_dict["REQUEST_METHOD"] = "POST"
-        env_var_dict["QUERY_STRING"] = ""
-        env_var_dict["PATH_INFO"] = "/suggestions"
+my_query = query_db("select * from majorroadstiger limit %s", (3,))
 
-def read_payload():
-    if(DEBUG):
-        return "Mer alpakkaer takk'); DROP TABLE suggestion;"
+json_output = json.dumps(my_query) """
 
-# Messy solution, consider using Flask to help with this eventually
-# Maybe make own decorators for more elegant wrapping?
-def route(url, method, payload, dbho, env_var_dict):
-    if(url == "/suggestions"):
-        if(method == "GET"):
-            print("GET!")
-        elif(method == "POST"):
-            print("POST!")
-            dbho.appendToTable("suggestion",
-                               [
-                                   env_var_dict["REMOTE_USER"],
-                                   payload
-                               ])
-        else:
-            raise Exception("Invalid method " + method + " at URL " + url)
-    
-def main():
-    config_dict = {} # Contains DB type, debug toggle and  credentials
-    env_var_dict = {} # Request type, user name etc
-    payload = "" # For POST requsts
-    
-    read_config(config_dict, CONFIG_FILE_LOCATION)
-    print(config_dict)
-    
-    read_env_vars(env_var_dict)
-    print(env_var_dict)
 
-    payload = read_payload()
-    print(payload)
-
-    db_handler_object = DB_handler(config_dict)
-
-    db_handler_object.connect();
-    
-    route(env_var_dict["PATH_INFO"],
-          env_var_dict["REQUEST_METHOD"],
-          payload,
-          db_handler_object,
-          env_var_dict)
-    
-    db_handler_object.disconnect();
-    
-
-if(__name__ == "__main__"):
-    main()
-else:
-    print("api script launced as module, launch it as a script instead")
