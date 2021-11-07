@@ -1,4 +1,5 @@
 import json
+import os
 
 # The main purpose of this class is to abstract away the specific
 # database handler used
@@ -16,7 +17,10 @@ class DB_wrap:
         self.connection = None
 
     def load_config(self, config):
-        self.config = {}
+        self.config = {
+            "debug": False # Default value
+        }
+        # Obligatory fields
         try:
             self.config["dbname"] = config["dbname"]
             self.config["host"] = config["host"]
@@ -26,6 +30,7 @@ class DB_wrap:
             self.config["port"] = config["port"]
         except:
             raise Exception("Invalid config provided to DB_wrap")
+
 
     def connect(self):
         if(self.config == None):
@@ -66,6 +71,7 @@ class DB_wrap:
 class Bugge:
     def __init__(self):
         self.config_dict = None # None indicates the config file is not read
+        self.env = None
         self.routes = {}
         self.DB = None # None indicates that no DB connection has been established
         self.url_params = {}
@@ -94,10 +100,28 @@ class Bugge:
             config_dict[key] = value
         
         config_file_handle.close()
+
+        # Are we in debug mode?
+        if "debug" in config_dict:
+            if(config_dict["debug"].lower() == "true"):
+                config_dict["debug"] = True
+            else:
+                config_dict["debug"] = False
+
+        else:
+            config_dict["debug"] = False # Debug is off by default
+
         self.config_dict = config_dict
 
     def read_environment(self):
-        pass
+        if (self.config_dict["debug"] == True):
+            from env import env 
+            self.env = env
+        else:
+            self.env["PATH_INFO"] = os.environ["PATH_INFO"]
+            self.env["QUERY_STRING"] = os.environ["QUERY_STRING"]
+            self.env["REMOTE_USER"] = os.environ["REMOTE_USER"]
+            self.env["REQUEST_METHOD"] = os.environ["REQUEST_METHOD"]
 
     def get_config(self):
         if(self.config_dict is None):
@@ -112,17 +136,14 @@ class Bugge:
         return decorator
 
     # Internal route adder. The decorator wraps this method
-    def add_route(self, handler, route, method):
+    def add_route(self, handler, path, method):
         # Keyed by a concatenation of method and url
         # Only saves the handler function, not the context
-        route_key = method + ":" + route
+        route_key = method + ":" + path
         self.routes[route_key] = handler
-
-    def read_request(self):
-        pass
         
-    def route_request(self, route, method):
-        route_key = method + ":" + route
+    def route_request(self, path, method):
+        route_key = method + ":" + path
 
         if route_key in self.routes:
             self.routes[route_key](); # Execute handler function
@@ -132,12 +153,14 @@ class Bugge:
     # Reads request paramters with read request, reads payload if the request is POST.
     # Uses the aquired input to handle the request and call the correct response.
     # Not sure what cases this will be able to cover, but a lot of cases should be possible to automate
-    def read_and_handle_request(self):
-        pass
+    def handle_request(self):
+        # Ensure environment is read
+        if(self.env == None):
+            self.read_environment()
 
-    # In a GCI context, this will be read from environment variables
-    def extract_url_params(self):
-        pass
+        path = self.env["PATH_INFO"]
+        method = self.env["REQUEST_METHOD"]
+        self.route_request(path, method)
 
     ### DB methods
     def init_DB(self):

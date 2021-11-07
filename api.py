@@ -8,25 +8,30 @@ from bugge.bugge import DB_wrap
 bugge = Bugge()
 bugge.read_config("./.config")
 bugge.init_DB()
-cursor = bugge.get_DB_cursor()
-cursor.execute("select * from forslag")
-for row in cursor:
-    print(row)
 
-""" def db(databaseName='d77uck12p6lknh'):
-    return psycopg2.connect(database=databaseName)
+@bugge.route("/forslag", "GET")
+def show_forslag():
+    cursor = bugge.get_DB_cursor()
+    cursor.execute("select * from forslag")
+    row_count = 0
+    rows = []
+    for row in cursor:
+        row_count += 1
+        rows += [row]
 
-def query_db(query, args=(), one=False):
-    cur = db().cursor()
-    cur.execute(query, args)
-    r = [dict((cur.description[i][0], value)
-        for i, value in enumerate(row)) for row in cur.fetchall()]
+    response = [dict() for x in range(0, row_count)]
+    row_count = 0
+    for row in rows:
+        response[row_count] = {
+            "id": row[0],
+            "title": row[1],
+            "forslag": row[2]
+        }
+        row_count += 1
 
-    cur.connection.close()
-    return (r[0] if r else None) if one else r
+    bugge.respond_JSON(response)
 
-my_query = query_db("select * from majorroadstiger limit %s", (3,))
-
-json_output = json.dumps(my_query) """
-
-
+# Reads the request from
+# env.py if in debug,
+# os.environ if not in debug (deploy)
+bugge.handle_request()
