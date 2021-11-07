@@ -1,41 +1,43 @@
 #!/usr/bin/python3
 
-# Versjon 1 av snauwebs api
-# Dette scriptet kjøres av apache når det requestes gjennom CGI
-# CGI definerer en rekke headere som gir tilgang på brukernavn,
-# requesttype, querystreng og mer. RFC 3875 definerer alle mulige
-# headere, lenke: https://datatracker.ietf.org/doc/html/rfc3875
 
+import json
+import sys
 import os
-credentials_file_location = "../../credentials/db.txt"
 
+#print("content-type: text/html\n\n")
+#print(os.environ)
 
-def setup_env_vars(vars_dict):
-    vars_dict["user"] =  os.environ["REMOTE_USER"]
-    vars_dict["method"] = os.environ["REQUEST_METHOD"]
-    vars_dict["query_string"] = os.environ["QUERY_STRING"]
-    try:
-        vars_dict["path"] = os.environ["PATH_INFO"]
-    except Exception:
-        vars_dict["path"] = ""
+from bugge.bugge import Bugge
+from bugge.bugge import DB_wrap
 
-def get_db_credentials(credentials_dict):
-    pass
-    
-    
-def main():
-    vars_dict = {};
-    setup_env_vars(vars_dict)
-    
-    print("Content-type: text/json")
-    print("Status: 204 NO CONTENT\n\n")
-    print("{ \n")
-    print("\"user\": \"" + vars_dict["user"] + "\",\n")
-    print("\"method\": \"" + vars_dict["method"] + "\",\n")
-    print("\"queryString\": \"" + vars_dict["query_string"] + "\",\n")
-    print("\"path\": \"" + vars_dict["path"] + "\"\n")
-    print("}")
-    
-# Only run as script
-if (__name__ == "__main__"):
-    main()
+bugge = Bugge()
+bugge.read_config("../../configs/testDB.txt")
+bugge.init_DB()
+
+@bugge.route("/forslag", "GET")
+def show_forslag():
+    cursor = bugge.get_DB_cursor()
+    cursor.execute("select * from forslag")
+    row_count = 0
+    rows = []
+    for row in cursor:
+        row_count += 1
+        rows += [row]
+
+    response = [dict() for x in range(0, row_count)]
+    row_count = 0
+    for row in rows:
+        response[row_count] = {
+            "id": row[0],
+            "title": row[1],
+            "forslag": row[2]
+        }
+        row_count += 1
+
+    bugge.respond_JSON(response)
+
+# Reads the request from
+# env.py if in debug,
+# os.environ if not in debug (deploy)
+bugge.handle_request()
