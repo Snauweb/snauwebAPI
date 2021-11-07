@@ -1,8 +1,19 @@
-
 import json
 import psycopg2
+import sys
 
-def db(databaseName='d77uck12p6lknh'):
+from bugge.bugge import Bugge
+from bugge.bugge import DB_wrap
+
+bugge = Bugge()
+bugge.read_config("./.config")
+bugge.init_DB()
+cursor = bugge.get_DB_cursor()
+cursor.execute("select * from forslag")
+for row in cursor:
+    print(row)
+
+""" def db(databaseName='d77uck12p6lknh'):
     return psycopg2.connect(database=databaseName)
 
 def query_db(query, args=(), one=False):
@@ -16,6 +27,6 @@ def query_db(query, args=(), one=False):
 
 my_query = query_db("select * from majorroadstiger limit %s", (3,))
 
-json_output = json.dumps(my_query)
+json_output = json.dumps(my_query) """
 
 
