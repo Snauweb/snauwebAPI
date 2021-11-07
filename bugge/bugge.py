@@ -114,11 +114,18 @@ class Bugge:
         self.config_dict = config_dict
 
     def read_environment(self):
+        self.env = {} # Initalise empty dictionary
         if (self.config_dict["debug"] == True):
             from env import env 
             self.env = env
         else:
-            self.env["PATH_INFO"] = os.environ["PATH_INFO"]
+            # Apache does not provide PATH_INFO if the request is for the API root
+            # Thus we need to make sure it exist before we try to read it
+            if "PATH_INFO" in os.environ:
+                self.env["PATH_INFO"] = os.environ["PATH_INFO"]
+            else:
+                self.env["PATH_INFO"] = "/"
+                
             self.env["QUERY_STRING"] = os.environ["QUERY_STRING"]
             self.env["REMOTE_USER"] = os.environ["REMOTE_USER"]
             self.env["REQUEST_METHOD"] = os.environ["REQUEST_METHOD"]
@@ -178,8 +185,8 @@ class Bugge:
     ### Response handlers
     def respond_HTML(self, body, status=200):
         header = \
-        "Content-type: text/html" + \
-        "Status: " + str(status) + "\n\n"
+        "content-type: text/html\n" + \
+        "status: " + str(status) + "\n\n"
             
         response = header + body
         print(response)
@@ -199,8 +206,8 @@ class Bugge:
             return
         
         header = \
-        "Content-type: text/json" + \
-        "Status: " + str(status) + "\n\n"
+        "content-type: text/json\n" + \
+        "status: " + str(status) + "\n\n"
 
         response = header + body
         print(response)
