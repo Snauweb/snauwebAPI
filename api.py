@@ -1,5 +1,4 @@
 import json
-import psycopg2
 import sys
 
 from bugge.bugge import Bugge
