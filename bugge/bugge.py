@@ -213,7 +213,7 @@ class Bugge:
     def respond_HTML(self, body, status=200):
         header = \
         "content-type: text/html\n" + \
-        "Access-Control-Allow-Origin: *" + \
+        "Access-Control-Allow-Origin: *\n" + \
         "status: " + str(status) + "\n\n"
             
         response = header + body
@@ -235,7 +235,7 @@ class Bugge:
         
         header = \
         "content-type: text/json\n" + \
-        "Access-Control-Allow-Origin: *" + \
+        "Access-Control-Allow-Origin: *\n" + \
         "status: " + str(status) + "\n\n"
 
         response = header + body
