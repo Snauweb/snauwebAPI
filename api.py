@@ -9,7 +9,8 @@ from bugge.bugge import Bugge
 from bugge.bugge import DB_wrap
 
 bugge = Bugge()
-bugge.read_config("../../configs/config_pg_test.txt")
+# Relative to launch directory
+bugge.read_config("./configs/config_pg_test.txt")
 bugge.init_DB()
 
 @bugge.route("/forslag", "POST")
