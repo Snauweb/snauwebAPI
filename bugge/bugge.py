@@ -121,8 +121,6 @@ class Bugge:
             from env import env 
             self.env = env
         else:
-            print("This the environ?")
-            print(os.environ)
             # Apache does not provide PATH_INFO if the request is for the API root
             # Thus we need to make sure it exist before we try to read it
             if "PATH_INFO" in os.environ:
@@ -165,6 +163,7 @@ class Bugge:
     def route(self, route, method):
         def decorator(route_handler):
             self.add_route(route_handler, route, method)
+            return route_handler
         return decorator
 
     # Internal route adder. The decorator wraps this method
@@ -215,7 +214,6 @@ class Bugge:
     def respond_HTML(self, body, status=200):
         header = \
         "content-type: text/html\n" + \
-        "Access-Control-Allow-Origin: *\n" + \
         "status: " + str(status) + "\n\n"
             
         response = header + body
@@ -237,7 +235,6 @@ class Bugge:
         
         header = \
         "content-type: text/json\n" + \
-        "Access-Control-Allow-Origin: *\n" + \
         "status: " + str(status) + "\n\n"
 
         response = header + body
