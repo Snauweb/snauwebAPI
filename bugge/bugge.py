@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 # The main purpose of this class is to abstract away the specific
 # database handler used
@@ -129,8 +130,19 @@ class Bugge:
                 self.env["PATH_INFO"] = "/"
                 
             self.env["QUERY_STRING"] = os.environ["QUERY_STRING"]
-            self.env["REMOTE_USER"] = os.environ["REMOTE_USER"]
+
+            # Local GCI deploy with http.server does not supply the
+            # REMOTE_USER header, need to handle
+            if "REMOTE_USER" in os.environ:
+                self.env["REMOTE_USER"] = os.environ["REMOTE_USER"]
+            else:
+                self.env["REMOTE_USER"] = "johanpålåfte"
+                
             self.env["REQUEST_METHOD"] = os.environ["REQUEST_METHOD"]
+
+            # Read lenght of posted content
+            if(self.env["REQUEST_METHOD"] == "POST"):
+                self.env["CONTENT_LENGTH"] = os.environ["CONTENT_LENGTH"]
 
     def read_payload(self):
         self.payload = ""
@@ -139,8 +151,9 @@ class Bugge:
             from payload import payload
             self.payload = payload
         else:
-            for line in sys.stdin:
-                self.payload += line
+            # Read CONTENT_LENGTH number of bytes from stdin
+            self.payload = sys.stdin.read(int(self.env["CONTENT_LENGTH"]))
+            
 
     ### Input processing
     def parse_payload_json(self):
@@ -152,7 +165,7 @@ class Bugge:
             parsed_payload = None
         finally:
             return parsed_payload
-    ### Getters
+    ### Getter
     def get_config(self):
         if(self.config_dict is None):
             raise Exception("Config is not loaded")

@@ -13,6 +13,7 @@ bugge = Bugge()
 bugge.read_config("./configs/config_pg_test.txt")
 bugge.init_DB()
 
+
 @bugge.route("/forslag", "POST")
 def add_forslag():
     bugge.read_payload()
@@ -30,7 +31,7 @@ def add_forslag():
     date_string = date_string[:date_string.find(".")]
     tittel = payload_dict["tittel"]
     forslag = payload_dict["forslag"]
-
+    
     if(tittel == "" or forslag == ""):
         bugge.respond_error("JSON",
                             422,
@@ -44,7 +45,6 @@ def add_forslag():
     cursor = bugge.get_DB_cursor()
     cursor.execute(query, [tittel, forslag, date_string, user])
     bugge.DB.connection.commit()
-    
     bugge.respond_JSON(payload_dict, status=201)
     cursor.close()
 
