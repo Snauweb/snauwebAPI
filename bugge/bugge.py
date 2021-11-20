@@ -77,6 +77,7 @@ class Bugge:
         self.routes = {}
         self.DB = None # None indicates that no DB connection has been established
         self.url_params = {}
+        sys.stdout.reconfigure(encoding = "utf-8")
 
     # Python has destructors!
     # Ensures the DB connection is not left open
