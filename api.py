@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: UTF-8 -*-
 
 import json
 import sys
@@ -27,6 +26,11 @@ def add_forslag():
 
 
     user = bugge.env["REMOTE_USER"]
+    # prune all the realm info from the name if needed
+    # johan@AD.SAMFUNDET.NO -> johan
+    if(not user.find('@') == -1):
+        user = user[:user.find('@')]
+        
     date = datetime.datetime.now()
     date_string = str(date)
     date_string = date_string[:date_string.find(".")]
@@ -52,7 +56,7 @@ def add_forslag():
 @bugge.route("/forslag", "GET")
 def show_forslag():
     cursor = bugge.get_DB_cursor()
-    cursor.execute("SELECT * FROM forslag")
+    cursor.execute("SELECT * FROM forslag ORDER BY lagt_til DESC")
     row_count = 0
     rows = []
     for row in cursor:
