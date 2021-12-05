@@ -18,7 +18,7 @@ bugge.init_DB()
 # As of now, any authenticated user is allowed to view the same user info
 # Accepts id as a query parameter. If more ids, pick first
 @bugge.route("/bruker", "GET")
-def get_brukernavn():
+def get_brukerinfo():
     cursor = bugge.get_DB_cursor()
     query_dict = parse_qs(bugge.env["QUERY_STRING"])
 
@@ -32,32 +32,35 @@ def get_brukernavn():
     # Otherwise, find the user id associated with the currently logged on user
     else:
         user = bugge.env["REMOTE_USER"]
+        print("bruker", user, file=sys.stderr)
         # prune all the realm info from the name if needed
         # johan@AD.SAMFUNDET.NO -> johan
         if(not user.find('@') == -1):
             user = user[:user.find('@')]
 
-            # Translate alias user name (from kerberos auth) into user_id,
-            # use id to look up more user info
-            query = \
-                'SELECT username, firstname FROM \
-                (SELECT brukerid FROM brukeralias where brukeralias.brukeralias = %s)\
-                AS ids INNER JOIN "tbl_User" AS u ON ids.brukerid = u.userid;'
+        # Translate alias user name (from kerberos auth) into user_id,
+        # use id to look up more user info
+        query = \
+            'SELECT username, firstname FROM \
+            (SELECT brukerid FROM brukeralias where brukeralias.brukeralias = %s)\
+            AS ids INNER JOIN "tbl_User" AS u ON ids.brukerid = u.userid;'
         
-            cursor.execute(query, [user]);
-
+        cursor.execute(query, [user]);
+            
     # Only one user should match, choose first found
-    result = cursor.fetchone();
-    if(result == None):
+    result = [];
+    try:
+        result = cursor.fetchone();
+    except Exception:
         bugge.respond_error("JSON",
                             404,
                             error_msg="No user data found");
         return;
 
-    response = {
+    response = [{
         "brukernavn": result[0],
         "fornavn": result[1]
-    }
+    }]
 
     # Discard any items remaing in cursor, regardless of exceptions thrown
     try:
