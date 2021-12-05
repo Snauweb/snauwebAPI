@@ -166,6 +166,7 @@ class Bugge:
             parsed_payload = None
         finally:
             return parsed_payload
+
     ### Getter
     def get_config(self):
         if(self.config_dict is None):
