@@ -142,7 +142,7 @@ def show_forslag():
         row_count += 1
         rows += [row]
 
-    response = [dict() for x in range(0, row_count)]
+    response = [{} for x in range(0, row_count)]
     row_count = 0
     for row in rows:
         response[row_count] = {
