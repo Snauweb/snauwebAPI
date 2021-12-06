@@ -237,8 +237,8 @@ class Bugge:
     # https://datatracker.ietf.org/doc/html/rfc7230
     def respond_HTML(self, body, status=200):
         header = \
-        "content-type: text/html\n" + \
-        "status: " + str(status) + "\n\n"
+        "Content-Type: text/html\n" + \
+        "Status: " + str(status) + "\n\n"
             
         response = header + body
         print(response)
@@ -258,8 +258,8 @@ class Bugge:
             return
         
         header = \
-        "content-type: text/json\n" + \
-        "status: " + str(status) + "\n\n"
+        "Content-Type: text/json\n" + \
+        "Status: " + str(status) + "\n\n"
 
         response = header + body
         print(response)

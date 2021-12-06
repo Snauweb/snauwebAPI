@@ -19,7 +19,7 @@ try:
     from configLocation import configLocation
     configPath = configLocation
     
-except:
+except: # if no file exists python will get mad. Catch the excption here with a noop
     pass
 
 bugge.read_config(configPath)
@@ -74,11 +74,11 @@ def get_brukerinfo():
                             error_msg="No user data found");
         return
 
-    # At this point, we know we found something
-    response = [{
+    # At this point, we know we found something. Pack it up and return it
+    response = {
         "brukernavn": result[0],
         "fornavn": result[1]
-    }]
+    }
 
     # Discard any items remaing in cursor, regardless of exceptions thrown
     try:
