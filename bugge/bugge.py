@@ -27,10 +27,16 @@ class DB_wrap:
             self.config["host"] = config["host"]
             self.config["pswd"] = config["pswd"]
             self.config["user"] = config["user"]
-            self.config["dbtype"] = config["dbtype"]
-            self.config["port"] = config["port"]
         except:
             raise Exception("Invalid config provided to DB_wrap")
+
+        # Optional fields, these assume default values if not specified
+        try:
+            self.config["dbtype"] = config["dbtype"]
+            self.config["port"] = config["port"]
+
+        except:
+            pass
 
 
     def connect(self):
@@ -40,6 +46,9 @@ class DB_wrap:
         # Default to mysql
         if "dbtype" not in self.config:
             self.config["dbtype"] = "mysql"
+
+        if "port" not in self.config:
+            self.config["port"] = "5432"
         
         if(self.config["dbtype"] == "mysql"):
             import mysql.connector

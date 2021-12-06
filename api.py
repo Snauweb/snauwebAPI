@@ -11,7 +11,9 @@ from bugge.bugge import DB_wrap
 
 bugge = Bugge()
 # Relative to launch directory
-bugge.read_config("./configs/config_pg_test.txt")
+
+#bugge.read_config("../../configs/testDB.txt") # <- test db confi
+bugge.read_config("../../configs/db.txt")  # deploy config
 bugge.init_DB()
 
 
@@ -69,6 +71,7 @@ def get_brukerinfo():
         pass
 
     bugge.respond_JSON(response)
+
 
 
 @bugge.route("/forslag", "POST")
