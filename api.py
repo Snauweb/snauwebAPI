@@ -9,11 +9,20 @@ from urllib.parse import parse_qs
 from bugge.bugge import Bugge
 from bugge.bugge import DB_wrap
 
+# API framework class
 bugge = Bugge()
-# Relative to launch directory
 
-#bugge.read_config("../../configs/testDB.txt") # <- test db confi
-bugge.read_config("../../configs/db.txt")  # deploy config
+
+# If configLocation file exists, use it. Otherwise use hard coded default
+configPath = "../configs/config.txt" # <- Default
+try:
+    from configLocation import configLocation
+    configPath = configLocation
+    
+except:
+    pass
+
+bugge.read_config(configPath)
 bugge.init_DB()
 
 
@@ -58,6 +67,14 @@ def get_brukerinfo():
                             error_msg="No user data found");
         return;
 
+    # Another null check
+    if(result == None):
+        bugge.respond_error("JSON",
+                            404,
+                            error_msg="No user data found");
+        return
+
+    # At this point, we know we found something
     response = [{
         "brukernavn": result[0],
         "fornavn": result[1]

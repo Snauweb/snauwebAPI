@@ -4,3 +4,4 @@ __pycache__
 .config
 env.py
 payload.py
+configLocation.py

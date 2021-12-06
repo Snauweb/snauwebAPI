@@ -273,6 +273,6 @@ class Bugge:
                               status=error_code)
 
         if(response_type == "JSON"):
-            self.respond_JSON({"Error": error_msg}, status=error_code)
+            self.respond_JSON({"errorMsg": error_msg}, status=error_code)
 
     
