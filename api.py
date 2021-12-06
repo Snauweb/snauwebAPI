@@ -34,7 +34,6 @@ def get_brukerinfo():
     # Otherwise, find the user id associated with the currently logged on user
     else:
         user = bugge.env["REMOTE_USER"]
-        print("bruker", user, file=sys.stderr)
         # prune all the realm info from the name if needed
         # johan@AD.SAMFUNDET.NO -> johan
         if(not user.find('@') == -1):
