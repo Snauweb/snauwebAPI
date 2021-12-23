@@ -109,10 +109,12 @@ def get_brukerinfo():
     # At this point, we know we found something. Pack it up and return it
     response = {
         "brukernavn": result[0],
-        "fornavn": result[1]
+        "fornavn": result[1],
+        "etternavn" : result[2]
     }
 
-    # Discard any items remaing in cursor, regardless of exceptions thrown
+    # Discard any items remaing in cursor. If any items do remain,
+    # this will cause an exception. We ignore it.
     try:
         cursor.close();
     except Exception:
@@ -186,7 +188,13 @@ def add_forslag():
 @bugge.route("/forslag", "GET")
 def show_forslag():
     cursor = bugge.get_DB_cursor()
-    cursor.execute("SELECT * FROM forslag ORDER BY lagt_til DESC")
+    forslagQuery =\
+        "SELECT tittel, forslag, lagt_til, brukerid, forslag.statusid,\
+        forslagstatus.beskrivelse\
+        FROM forslag INNER JOIN forslagstatus ON\
+        forslag.statusid = forslagstatus.statusid\
+        ORDER BY lagt_til DESC"
+    cursor.execute(forslagQuery)
     row_count = 0
     rows = []
     for row in cursor:
@@ -197,9 +205,11 @@ def show_forslag():
     row_count = 0
     for row in rows:
         response[row_count] = {
-            "tittel": row[1],
-            "forslag": row[2],
-            "lagt_til": str(row[3])
+            "tittel": row[0],
+            "forslag": row[1],
+            "lagt_til": str(row[2]),
+            "statusid": row[4],
+            "statusbeskrivelse": row[5]
         }
         row_count += 1
         
