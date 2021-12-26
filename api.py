@@ -189,11 +189,13 @@ def add_forslag():
 def show_forslag():
     cursor = bugge.get_DB_cursor()
     forslagQuery =\
-        "SELECT tittel, forslag, lagt_til, brukerid, forslag.statusid,\
-        forslagstatus.beskrivelse\
-        FROM forslag INNER JOIN forslagstatus ON\
-        forslag.statusid = forslagstatus.statusid\
-        ORDER BY lagt_til DESC"
+        """
+        SELECT tittel, forslag, lagt_til, brukerid, forslag.statusid,
+        forslagstatus.beskrivelse
+        FROM forslag INNER JOIN forslagstatus ON
+        forslag.statusid = forslagstatus.statusid
+        ORDER BY lagt_til DESC
+        """
     cursor.execute(forslagQuery)
     row_count = 0
     rows = []
