@@ -9,6 +9,8 @@ from urllib.parse import parse_qs
 from bugge.bugge import Bugge
 from bugge.bugge import DB_wrap
 
+import api_utils
+
 # API framework class
 bugge = Bugge()
 
@@ -18,12 +20,106 @@ configPath = "../configs/config.txt" # <- Default
 try:
     from configLocation import configLocation
     configPath = configLocation
-    
-except: # if no file exists python will get mad. Catch the excption here with a noop
+
+# if no file exists python will get mad. Catch the excption here with a noop
+# This makes the framework fall back to the defult defined above
+except: 
     pass
 
 bugge.read_config(configPath)
 bugge.init_DB()
+
+
+# Get reaction info for forslag. If forslagid is specified, a specific forslag is returned
+# If id is specified, the count and type for all forslag present in the database is returned
+@bugge.route("/reaksjon", "GET")
+def get_reactions():
+    cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+    
+    reaction_cursor = bugge.get_DB_cursor()
+    query_dict = parse_qs(bugge.env["QUERY_STRING"])
+    reaction_query = ""
+    response = "no data"
+    # Return number of reactions for given id
+    if("id" in query_dict):
+        forslagid = query_dict["id"][0]
+
+        reaction_query = \
+            """
+            SELECT count(*) AS num_reaksjoner, bool_or(brukerid=%s) AS cur_user_reacted
+            FROM forslag_reaksjon 
+            WHERE forslagid=%s
+            GROUP BY forslagid;
+            """
+        
+
+        reaction_cursor.execute(reaction_query, [cur_user_id, forslagid])
+    
+        result = reaction_cursor.fetchone();
+        reaction_cursor.close();
+        # Return a 404 if no data is found for this forslagid
+        if(result == None):
+            bugge.respond_error("JSON",
+                                404,
+                                error_msg=(
+                                    "No reaksjon data found for forslagid " +
+                                    forslagid
+                                ));
+            return
+        
+        response = {
+            "forslagid": forslagid,
+            "numReaksjoner" : result[0],
+            "curUserReacted" : result[1]
+        }
+
+
+    # If no id is given, list all
+    else:
+        reaction_query = \
+            """
+            SELECT forslagid, 
+                   count(*) AS num_reaksjoner, 
+                   bool_or(brukerid=%s) AS cur_user_reacted
+            FROM forslag_reaksjon 
+            GROUP BY forslagid;
+            """
+
+        print("fetcing reactions as user", cur_user_id, file=sys.stderr)
+        reaction_cursor.execute(reaction_query, [cur_user_id])
+        
+
+        total_rows = 0
+        rows = []
+        for row in reaction_cursor:
+            total_rows += 1
+            rows += [row]
+
+        if(total_rows == 0):
+            bugge.respond_error("JSON",
+                                404,
+                                error_msg="No reaksjon data found");
+            return
+
+
+        response = [{} for x in range(0, total_rows)]
+        row_count = 0
+        for row in rows:
+            response[row_count] = {
+                "forslagid": row[0],
+                "numReaksjoner" : row[1],
+                "curUserReacted" : row[2]
+            }
+
+            row_count += 1
+         
+
+        
+    # Return the completed response
+    bugge.respond_JSON(response)
+
+    
+    
 
 
 # Shows all active aliases
