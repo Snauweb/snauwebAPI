@@ -5,6 +5,23 @@ from urllib.parse import parse_qs
 
 # Contains helper functions for the main api endpoint
 
+# To check for database existence
+# TODO
+def is_id_in_db(table, idcol):
+    pass
+
+# For field validation
+# Is this string a positive non 0 integer
+def is_valid_id(string):
+    try:
+        string_as_int = int(string)
+        if(string_as_int > 0):
+            return True
+        return False
+    except:
+        return False
+            
+# Id of user currently logged on
 def get_cur_user_id(bugge, dbwrap):
     cursor = bugge.get_DB_cursor()
 

@@ -139,6 +139,32 @@ class Bugge:
 
             self.env["REQUEST_METHOD"] = os.environ["REQUEST_METHOD"]
 
+            # Read lenght of posted content
+            if(self.env["REQUEST_METHOD"] == "POST"):
+                self.env["CONTENT_LENGTH"] = os.environ["CONTENT_LENGTH"]
+
+    def read_payload(self):
+        self.payload = ""
+        # in debug mode, load mock payload from file
+        if(self.config_dict["debug"] == True):
+            from payload import payload
+            self.payload = payload
+        else:
+            # Read CONTENT_LENGTH number of bytes from stdin
+            self.payload = sys.stdin.read(int(self.env["CONTENT_LENGTH"]))
+            
+
+    ### Input processing
+    def parse_payload_json(self):
+        if(self.payload == None):
+            raise Exception("Payload not read, call read_payload before any payload-using methods")
+        try:
+            parsed_payload = json.loads(self.payload)
+        except Exception:
+            parsed_payload = None
+        finally:
+            return parsed_payload
+            
     def get_config(self):
         if(self.config_dict is None):
             raise Exception("Config is not loaded")
@@ -225,9 +251,11 @@ class Bugge:
         print(response)
 
 
-    def respond_error(self, type, error_code):
-        if(type == "HTML"):
-            self.respond_HTML("<h1>Error " + str(error_code) + "</h1>", status=error_code)
-
-        if(type == "JSON"):
-            self.respond_JSON({"http-error": error_code}, status=error_code)
+    def respond_error(self, response_type, error_code, error_msg="Error"):
+        if(response_type == "HTML"):
+            self.respond_HTML("<h1>" +
+                              error_msg + " " + str(error_code) +
+                              "</h1>",
+                              status=error_code)
+        if(response_type == "JSON"):
+            self.respond_JSON({"errorMsg": error_msg}, status=error_code)
