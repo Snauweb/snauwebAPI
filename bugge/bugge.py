@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 
 # The main purpose of this class is to abstract away the specific
 # database handler used
@@ -27,16 +26,10 @@ class DB_wrap:
             self.config["host"] = config["host"]
             self.config["pswd"] = config["pswd"]
             self.config["user"] = config["user"]
-        except:
-            raise Exception("Invalid config provided to DB_wrap")
-
-        # Optional fields, these assume default values if not specified
-        try:
             self.config["dbtype"] = config["dbtype"]
             self.config["port"] = config["port"]
-
         except:
-            pass
+            raise Exception("Invalid config provided to DB_wrap")
 
 
     def connect(self):
@@ -46,9 +39,6 @@ class DB_wrap:
         # Default to mysql
         if "dbtype" not in self.config:
             self.config["dbtype"] = "mysql"
-
-        if "port" not in self.config:
-            self.config["port"] = "5432"
         
         if(self.config["dbtype"] == "mysql"):
             import mysql.connector
@@ -63,7 +53,7 @@ class DB_wrap:
             self.connection = psycopg2.connect(dbname=self.config["dbname"], user=self.config["user"], password=self.config["pswd"], host=self.config["host"],port=self.config["port"])
         else:
             raise Exception("Invalid database type " + self.config["dbtype"])
-    
+        
     def get_cursor(self):
         if(self.connection == None):
             raise Exception("Attempted to fetch cursor before connecting database")
@@ -82,19 +72,16 @@ class Bugge:
     def __init__(self):
         self.config_dict = None # None indicates the config file is not read
         self.env = None
-        self.payload = None
         self.routes = {}
         self.DB = None # None indicates that no DB connection has been established
         self.url_params = {}
-        sys.stdout.reconfigure(encoding = "utf-8")
 
     # Python has destructors!
     # Ensures the DB connection is not left open
     def __del__(self):
         if(self.DB is not None):
             self.DB.close()
-
-    ### Reading from environment
+    
     def read_config(self, url):
         config_file_handle = open(url, 'r')
         config_file_lines = config_file_handle.readlines()
@@ -140,43 +127,9 @@ class Bugge:
                 self.env["PATH_INFO"] = "/"
                 
             self.env["QUERY_STRING"] = os.environ["QUERY_STRING"]
-
-            # Local GCI deploy with http.server does not supply the
-            # REMOTE_USER header, need to handle
-            if "REMOTE_USER" in os.environ:
-                self.env["REMOTE_USER"] = os.environ["REMOTE_USER"]
-            else:
-                self.env["REMOTE_USER"] = "johanpålåfte"
-                
+            self.env["REMOTE_USER"] = os.environ["REMOTE_USER"]
             self.env["REQUEST_METHOD"] = os.environ["REQUEST_METHOD"]
 
-            # Read lenght of posted content
-            if(self.env["REQUEST_METHOD"] == "POST"):
-                self.env["CONTENT_LENGTH"] = os.environ["CONTENT_LENGTH"]
-
-    def read_payload(self):
-        self.payload = ""
-        # in debug mode, load mock payload from file
-        if(self.config_dict["debug"] == True):
-            from payload import payload
-            self.payload = payload
-        else:
-            # Read CONTENT_LENGTH number of bytes from stdin
-            self.payload = sys.stdin.read(int(self.env["CONTENT_LENGTH"]))
-            
-
-    ### Input processing
-    def parse_payload_json(self):
-        if(self.payload == None):
-            raise Exception("Payload not read, call read_payload before any payload-using methods")
-        try:
-            parsed_payload = json.loads(self.payload)
-        except Exception:
-            parsed_payload = None
-        finally:
-            return parsed_payload
-
-    ### Getter
     def get_config(self):
         if(self.config_dict is None):
             raise Exception("Config is not loaded")
@@ -187,7 +140,6 @@ class Bugge:
     def route(self, route, method):
         def decorator(route_handler):
             self.add_route(route_handler, route, method)
-            return route_handler
         return decorator
 
     # Internal route adder. The decorator wraps this method
@@ -231,14 +183,10 @@ class Bugge:
 
 
     ### Response handlers
-    # If you want to mess with this, consult the RFC on http first
-    # lots of little details. Apache fills out most of it for us,
-    # but especially the status code is nice to set from this script
-    # https://datatracker.ietf.org/doc/html/rfc7230
     def respond_HTML(self, body, status=200):
         header = \
-        "Content-Type: text/html\n" + \
-        "Status: " + str(status) + "\n\n"
+        "content-type: text/html\n" + \
+        "status: " + str(status) + "\n\n"
             
         response = header + body
         print(response)
@@ -251,28 +199,23 @@ class Bugge:
             pass
 
         elif(type(body) == dict or type(body) == list):
-            body = json.dumps(body, ensure_ascii=False)
+            body = json.dumps(body)
 
         else:
             respond_error("JSON", 500)
             return
         
         header = \
-        "Content-Type: text/json\n" + \
-        "Status: " + str(status) + "\n\n"
+        "content-type: text/json\n" + \
+        "status: " + str(status) + "\n\n"
 
         response = header + body
         print(response)
 
 
-    def respond_error(self, response_type, error_code, error_msg="Error"):
-        if(response_type == "HTML"):
-            self.respond_HTML("<h1>" +
-                              error_msg + " " + str(error_code) +
-                              "</h1>",
-                              status=error_code)
+    def respond_error(self, type, error_code):
+        if(type == "HTML"):
+            self.respond_HTML("<h1>Error " + str(error_code) + "</h1>", status=error_code)
 
-        if(response_type == "JSON"):
-            self.respond_JSON({"errorMsg": error_msg}, status=error_code)
-
-    
+        if(type == "JSON"):
+            self.respond_JSON({"http-error": error_code}, status=error_code)

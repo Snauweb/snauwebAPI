@@ -30,6 +30,17 @@ bugge.read_config(configPath)
 bugge.init_DB()
 
 
+# Add or remove a reaction.
+# Normally, you can only add or remove reactions on your own behalf
+# Payload is {[brukerid: <bid>], forslagid: <fid>, reaksjonstypeid: <id>}
+# brukerid is optional, and only relevant for superusers. Normal users
+# trying to react on someone elses behalf must be stopped and sent a 403 forbidden message.
+# When brukerid is not specified, the id of the currently logged in user is used
+
+@bugge.route("/reaksjon", "POST")
+def react_to_forslag():
+    pass 
+
 # Get reaction info for forslag. If forslagid is specified, a specific forslag is returned
 # If id is specified, the count and type for all forslag present in the database is returned
 @bugge.route("/reaksjon", "GET")
@@ -312,6 +323,11 @@ def show_forslag():
         row_count += 1
         
     bugge.respond_JSON(response)
+
+# The api root should contain instructions for api use
+@bugge.route("/", "GET")
+def show_help():
+    bugge.respond_HTML("<h1>Snauweb API</h1> <p>Her burde det stå instruksjoner for API-bruk")
 
 # Reads the request from
 # env.py if in debug,
