@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 # The main purpose of this class is to abstract away the specific
 # database handler used
@@ -75,6 +76,7 @@ class Bugge:
         self.routes = {}
         self.DB = None # None indicates that no DB connection has been established
         self.url_params = {}
+        sys.stdout.reconfigure(encoding = "utf-8") # Encode all output as utf-8
 
     # Python has destructors!
     # Ensures the DB connection is not left open
@@ -127,7 +129,14 @@ class Bugge:
                 self.env["PATH_INFO"] = "/"
                 
             self.env["QUERY_STRING"] = os.environ["QUERY_STRING"]
-            self.env["REMOTE_USER"] = os.environ["REMOTE_USER"]
+
+            # Local GCI deploy with http.server does not supply the
+            # REMOTE_USER header, should have default
+            if "REMOTE_USER" in os.environ:
+                self.env["REMOTE_USER"] = os.environ["REMOTE_USER"]
+            else:
+                self.env["REMOTE_USER"] = "johanpålåfte"
+
             self.env["REQUEST_METHOD"] = os.environ["REQUEST_METHOD"]
 
     def get_config(self):
@@ -185,9 +194,9 @@ class Bugge:
     ### Response handlers
     def respond_HTML(self, body, status=200):
         header = \
-        "content-type: text/html\n" + \
+        "content-type: text/html; charset=utf-8\n" + \
         "status: " + str(status) + "\n\n"
-            
+        
         response = header + body
         print(response)
 
@@ -204,10 +213,13 @@ class Bugge:
         else:
             respond_error("JSON", 500)
             return
+
+
         
         header = \
-        "content-type: text/json\n" + \
-        "status: " + str(status) + "\n\n"
+        "content-type: text/html; charset=utf-8\n" + \
+        "status: " + str(status) + "\n" +\
+        "charset: utf-8" + "\n\n"
 
         response = header + body
         print(response)
