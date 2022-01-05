@@ -5,6 +5,49 @@ from urllib.parse import parse_qs
 
 # Contains helper functions for the main api endpoint
 
+# Get number of reactions for all ids in parameter
+def get_single_reaction_count(forslagid, userid, bugge, dbwrap):
+    reaction_cursor = bugge.get_DB_cursor()
+    reaction_query = \
+        """
+        SELECT count(*) AS num_reaksjoner, bool_or(brukerid=%s) AS cur_user_reacted
+        FROM forslag_reaksjon 
+        WHERE forslagid=%s
+        GROUP BY forslagid;
+        """
+        
+     
+    reaction_cursor.execute(reaction_query, [userid, forslagid])
+    
+    result = reaction_cursor.fetchone();
+    reaction_cursor.close();
+
+    return result
+
+def get_all_reaction_counts(userid, bugge, dbwrap):
+    reaction_cursor = bugge.get_DB_cursor()
+
+    reaction_query = \
+        """
+            SELECT forslagid, 
+                   count(*) AS num_reaksjoner, 
+                   bool_or(brukerid=%s) AS cur_user_reacted
+            FROM forslag_reaksjon 
+            GROUP BY forslagid;
+        """
+
+    reaction_cursor.execute(reaction_query, [userid])
+        
+
+    total_rows = 0
+    rows = []
+    for row in reaction_cursor:
+        total_rows += 1
+        rows += [row]
+
+    return rows
+
+
 # To check for database existence
 # TODO
 def is_id_in_db(table, idcol):

@@ -176,7 +176,7 @@ def react_to_forslag():
     # For some reason this is required when altering the database, but not when reading
     bugge.DB.connection.commit()
 
-    # Try catch to ensure no exceptions even if the cursors contain stuff
+    # Try catch to ensure no exceptions even if the cursors contain stuff for some reason
     try:
         select_cursor.close()
     except:
@@ -196,7 +196,6 @@ def react_to_forslag():
 def get_reactions():
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
     
-    reaction_cursor = bugge.get_DB_cursor()
     query_dict = parse_qs(bugge.env["QUERY_STRING"])
     reaction_query = ""
     response = "no data"
@@ -204,65 +203,29 @@ def get_reactions():
     if("id" in query_dict):
         forslagid = query_dict["id"][0]
 
-        reaction_query = \
-            """
-            SELECT count(*) AS num_reaksjoner, bool_or(brukerid=%s) AS cur_user_reacted
-            FROM forslag_reaksjon 
-            WHERE forslagid=%s
-            GROUP BY forslagid;
-            """
-        
-
-        reaction_cursor.execute(reaction_query, [cur_user_id, forslagid])
-    
-        result = reaction_cursor.fetchone();
-        reaction_cursor.close();
-        # Return a 404 if no data is found for this forslagid
+        result = api_utils.get_single_reaction_count(forslagid, cur_user_id, bugge, DB_wrap)
+        # Return a count of 0 if no reactions are found
         if(result == None):
-            bugge.respond_error("JSON",
-                                404,
-                                error_msg=(
-                                    "No reaksjon data found for forslagid " +
-                                    forslagid
-                                ));
-            return
-        
-        response = {
-            "forslagid": forslagid,
-            "numReaksjoner" : result[0],
-            "curUserReacted" : result[1]
-        }
+            response = {
+                "forslagid": forslagid,
+                "numReaksjoner" : 0,
+                "curUserReacted" : False
+            }
+
+        # Otherwise, return the found count
+        else:
+            response = {
+                "forslagid": forslagid,
+                "numReaksjoner" : result[0],
+                "curUserReacted" : result[1]
+            }
 
 
     # If no id is given, list all
     else:
-        reaction_query = \
-            """
-            SELECT forslagid, 
-                   count(*) AS num_reaksjoner, 
-                   bool_or(brukerid=%s) AS cur_user_reacted
-            FROM forslag_reaksjon 
-            GROUP BY forslagid;
-            """
+        rows = api_utils.get_all_reaction_counts(cur_user_id, bugge, DB_wrap)
 
-        print("fetcing reactions as user", cur_user_id, file=sys.stderr)
-        reaction_cursor.execute(reaction_query, [cur_user_id])
-        
-
-        total_rows = 0
-        rows = []
-        for row in reaction_cursor:
-            total_rows += 1
-            rows += [row]
-
-        if(total_rows == 0):
-            bugge.respond_error("JSON",
-                                404,
-                                error_msg="No reaksjon data found");
-            return
-
-
-        response = [{} for x in range(0, total_rows)]
+        response = [{} for x in range(0, len(rows))]
         row_count = 0
         for row in rows:
             response[row_count] = {
@@ -441,25 +404,36 @@ def add_forslag():
     bugge.respond_JSON(payload_dict, status=201)
     cursor.close()
 
-# Must support foltering what forslag is selected. Use query parameters for this
+# Must support filtering what forslag is selected. Use query parameters for this
 @bugge.route("/forslag", "GET")
 def show_forslag():
+    cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
     cursor = bugge.get_DB_cursor()
     forslagQuery =\
         """
         SELECT tittel, forslag, lagt_til, brukerid, forslag.statusid,
-        forslagstatus.beskrivelse
+        forslagstatus.beskrivelse, reaksjoner.num_reaksjoner, reaksjoner.cur_user_reacted
         FROM forslag INNER JOIN forslagstatus ON
         forslag.statusid = forslagstatus.statusid
+        INNER JOIN (
+        SELECT forslagid, 
+                   count(*) AS num_reaksjoner, 
+                   bool_or(brukerid=%s) AS cur_user_reacted
+            FROM forslag_reaksjon 
+            GROUP BY forslagid
+        ) AS reaksjoner
+        ON reaksjoner.forslagid = forslag.forslagid
         ORDER BY lagt_til DESC
         """
-    cursor.execute(forslagQuery)
+    
+    cursor.execute(forslagQuery, [cur_user_id])
+    
     row_count = 0
     rows = []
     for row in cursor:
         row_count += 1
         rows += [row]
-
+        
     response = [{} for x in range(0, row_count)]
     row_count = 0
     for row in rows:
@@ -468,14 +442,16 @@ def show_forslag():
             "forslag": row[1],
             "lagt_til": str(row[2]),
             "statusid": row[4],
-            "statusbeskrivelse": row[5]
+            "statusbeskrivelse": row[5],
+            "num_reaksjoner": row[6],
+            "cur_user_reacted": row[7]
         }
         row_count += 1
         
     bugge.respond_JSON(response)
 
 # The api root should contain instructions for api use
-@bugge.route("/", "GET")
+@bugge.route("", "GET")
 def show_help():
     bugge.respond_HTML("<h1>Snauweb API</h1> <p>Her burde det stå instruksjoner for API-bruk")
 
