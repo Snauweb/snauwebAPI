@@ -415,7 +415,7 @@ def show_forslag():
         forslagstatus.beskrivelse, reaksjoner.num_reaksjoner, reaksjoner.cur_user_reacted
         FROM forslag INNER JOIN forslagstatus ON
         forslag.statusid = forslagstatus.statusid
-        INNER JOIN (
+        LEFT JOIN (
         SELECT forslagid, 
                    count(*) AS num_reaksjoner, 
                    bool_or(brukerid=%s) AS cur_user_reacted
@@ -425,6 +425,7 @@ def show_forslag():
         ON reaksjoner.forslagid = forslag.forslagid
         ORDER BY lagt_til DESC
         """
+
     
     cursor.execute(forslagQuery, [cur_user_id])
     
@@ -437,14 +438,25 @@ def show_forslag():
     response = [{} for x in range(0, row_count)]
     row_count = 0
     for row in rows:
+        # Handle forslag without reaksjoner
+        num_reaksjoner = row[6]
+        if(num_reaksjoner == None):
+            num_reaksjoner = 0
+
+        cur_user_reacted = row[7]
+        if(cur_user_reacted == None):
+            cur_user_reacted = False
+
+        
+        
         response[row_count] = {
             "tittel": row[0],
             "forslag": row[1],
             "lagt_til": str(row[2]),
             "statusid": row[4],
             "statusbeskrivelse": row[5],
-            "num_reaksjoner": row[6],
-            "cur_user_reacted": row[7]
+            "num_reaksjoner": num_reaksjoner,
+            "cur_user_reacted": cur_user_reacted
         }
         row_count += 1
         
