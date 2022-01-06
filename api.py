@@ -187,6 +187,27 @@ def react_to_forslag():
     except:
         pass
 
+    # Return the new count, this is more efficient than performing a round-trip over the net
+    result = api_utils.get_single_reaction_count(expected_fields["forslagid"],
+                                                 cur_user_id, bugge, DB_wrap)
+    # Return a count of 0 if no reactions are found
+    if(result == None):
+        response = {
+            "forslagid": expected_fields["forslagid"],
+            "numReaksjoner" : 0,
+            "curUserReacted" : False
+        }
+        
+        # Otherwise, return the found count
+    else:
+        response = {
+            "forslagid": expected_fields["forslagid"],
+            "numReaksjoner" : result[0],
+            "curUserReacted" : result[1]
+        }
+
+    bugge.respond_JSON(response)
+
     
         
 
@@ -411,7 +432,7 @@ def show_forslag():
     cursor = bugge.get_DB_cursor()
     forslagQuery =\
         """
-        SELECT tittel, forslag, lagt_til, brukerid, forslag.statusid,
+        SELECT forslag.forslagid, tittel, forslag, lagt_til, brukerid, forslag.statusid,
         forslagstatus.beskrivelse, reaksjoner.num_reaksjoner, reaksjoner.cur_user_reacted
         FROM forslag INNER JOIN forslagstatus ON
         forslag.statusid = forslagstatus.statusid
@@ -439,22 +460,23 @@ def show_forslag():
     row_count = 0
     for row in rows:
         # Handle forslag without reaksjoner
-        num_reaksjoner = row[6]
+        num_reaksjoner = row[7]
         if(num_reaksjoner == None):
             num_reaksjoner = 0
 
-        cur_user_reacted = row[7]
+        cur_user_reacted = row[8]
         if(cur_user_reacted == None):
             cur_user_reacted = False
 
         
         
         response[row_count] = {
-            "tittel": row[0],
-            "forslag": row[1],
-            "lagt_til": str(row[2]),
-            "statusid": row[4],
-            "statusbeskrivelse": row[5],
+            "forslagid": row[0],
+            "tittel": row[1],
+            "forslag": row[2],
+            "lagt_til": str(row[3]),
+            "statusid": row[5],
+            "statusbeskrivelse": row[6],
             "num_reaksjoner": num_reaksjoner,
             "cur_user_reacted": cur_user_reacted
         }
