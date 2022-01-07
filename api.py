@@ -364,6 +364,7 @@ def get_brukerinfo():
 
 
 
+# This endpoint auto-includes the currently logged in user, and marks the forslag as ny (status 1)
 @bugge.route("/forslag", "POST")
 def add_forslag():
     bugge.read_payload()
@@ -417,10 +418,10 @@ def add_forslag():
         return
     
     query = \
-        "INSERT INTO forslag (tittel, forslag, lagt_til, brukerid)\
-        VALUES (%s, %s, %s, %s)"
+        "INSERT INTO forslag (tittel, forslag, lagt_til, brukerid, statusid)\
+        VALUES (%s, %s, %s, %s, %s)"
     cursor = bugge.get_DB_cursor()
-    cursor.execute(query, [tittel, forslag, date_string, user_id])
+    cursor.execute(query, [tittel, forslag, date_string, user_id, 1])
     bugge.DB.connection.commit()
     bugge.respond_JSON(payload_dict, status=201)
     cursor.close()
