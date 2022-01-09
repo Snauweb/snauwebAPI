@@ -431,7 +431,7 @@ def add_forslag():
 # Recognised parameters:
 # sorter = <[dato|stemmer|kategori]>-<[asc|desc]>
 # kategorier = [<list>]
-# substreng = <substreng>
+# sok = <substreng>
 @bugge.route("/forslag", "GET")
 def show_forslag():
     # First all parameters must be prepared
@@ -443,22 +443,20 @@ def show_forslag():
 
     # First the ordering. If no ordering parameter is specified,
     # sort by date descending.
-    forslagQuerySort = "ORDER BY lagt_til DESC"
+    forslag_query_sort = "ORDER BY lagt_til DESC"
     if("sorter" in query_dict):
-        sorterValue = query_dict["sorter"][0] #Should only be one value for this parameter
-        (field, order) = sorterValue.split('-')
+        sorter_value = query_dict["sorter"][0] #Should only be one value for this parameter
+        (field, order) = sorter_value.split('-')
         (field, order) = (field.lower(), order.upper())
 
-        paramIsValid = False
-
-        print(field, order, file=sys.stderr)
+        param_is_valid = False
         
         # Parameter must be of a valid value
         # This is important to make sure user input does not contain SQL and such
         if(field in ["dato", "stemmer", "kategori"] and order in ["ASC", "DESC"]):
-            paramIsValid = True
+            param_is_valid = True
 
-        if(paramIsValid):
+        if(param_is_valid):
             if(field == "dato"):
                 field = "lagt_til"
 
@@ -468,7 +466,7 @@ def show_forslag():
             if(field == "kategori"):
                 field = "forslag.statusid"
             
-            forslagQuerySort = "ORDER BY " + field + " " + order
+            forslag_query_sort = "ORDER BY " + field + " " + order
 
         # Illegal parameters should return a 422
         else:
@@ -477,9 +475,19 @@ def show_forslag():
                                 error_msg=\
                                 "Illegal value for query parameter sorter: " + sorterValue)
             return
+
+    # Then we must add the search parameter. By default nothing
+    # As this is free text, it must be added as a parameter to the prepared statement
+    sok_value = ".*" # by default, match all
+    forslag_query_sok = " WHERE tittel ~ %s OR forslag ~%s "
+    if("sok" in query_dict):
+        sok_param_value = query_dict["sok"][0]
+         # As this is included in a prepared statement,
+         # copying query string verbatim should be safe
+        sok_value = sok_param_value
     
     cursor = bugge.get_DB_cursor()
-    forslagQueryBase =\
+    forslag_query_base =\
         """
         SELECT forslag.forslagid, tittel, forslag, lagt_til, brukerid, forslag.statusid,
         forslagstatus.beskrivelse,
@@ -498,10 +506,14 @@ def show_forslag():
         ON reaksjoner.forslagid = forslag.forslagid
         """
 
-    forslagQuery = forslagQueryBase + forslagQuerySort
-
+    forslag_query = (
+        forslag_query_base +
+        forslag_query_sok +
+        forslag_query_sort
+    )
+    SQL_query_params = [cur_user_id, sok_value, sok_value]
     
-    cursor.execute(forslagQuery, [cur_user_id])
+    cursor.execute(forslag_query, SQL_query_params)
     
     row_count = 0
     rows = []
@@ -512,17 +524,6 @@ def show_forslag():
     response = [{} for x in range(0, row_count)]
     row_count = 0
     for row in rows:
-        # Handle forslag without reaksjoner
-        #num_reaksjoner = row[7]
-        #if(num_reaksjoner == None):
-        #    num_reaksjoner = 0
-
-        #cur_user_reacted = row[8]
-        #if(cur_user_reacted == None):
-        #    cur_user_reacted = False
-
-        
-        
         response[row_count] = {
             "forslagid": row[0],
             "tittel": row[1],
