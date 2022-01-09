@@ -434,9 +434,7 @@ def add_forslag():
 # kategorier = [<list>]
 # sok = <substreng>
 #
-# sok supports regular expressions to some extent, not sure what special characters
-# are removed when the prepared statement algorithm is run. It matches both
-# header and body of forslag.
+# sok matches either header or body
 # A match in either means the forslag is included in the response
 @bugge.route("/forslag", "GET")
 def show_forslag():
@@ -531,13 +529,15 @@ def show_forslag():
         
     # Then we must add the search parameter. By default nothing
     # As this is free text, it must be added as a parameter to the prepared statement
-    sok_value = ".*" # by default, match all
-    forslag_query_sok = " (tittel ~ %s OR forslag ~ %s) "
+    sok_value = "%" # by default, match all (in regex, this would be .*)
+     # ~* means case insensetive match
+    forslag_query_sok = " (tittel ILIKE %s OR forslag ILIKE %s) "
     if("sok" in query_dict):
         sok_param_value = query_dict["sok"][0]
-         # As this is included in a prepared statement,
-         # copying query string verbatim should be safe
-        sok_value = sok_param_value
+        # As this is included in a prepared statement,
+        # copying query string verbatim should be safe
+        # the surrounding %% ensures it is matched wherever it is in the text
+        sok_value = "%" + sok_param_value + "%"
     
     cursor = bugge.get_DB_cursor()
     forslag_query_base =\
@@ -572,20 +572,7 @@ def show_forslag():
     
     
     SQL_query_params = [cur_user_id, sok_value, sok_value]
-
-    try:
-        cursor.execute(forslag_query, SQL_query_params)
-    except psycopg2.errors.InvalidRegularExpression:
-        try:
-            cursor.close()
-        except Exception:
-            pass
-        bugge.respond_error(
-            response_type = "JSON",
-            error_code = 422,
-            error_msg = "An invalid regular expression was passed as search parameter")
-        return
-            
+                
     row_count = 0
     rows = []
     for row in cursor:
