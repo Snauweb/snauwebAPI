@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import json
+import psycopg2
 import sys
 import os
 import datetime
@@ -569,12 +570,22 @@ def show_forslag():
         forslag_query_sort
     )
     
-    print(forslag_query, file = sys.stderr)
     
     SQL_query_params = [cur_user_id, sok_value, sok_value]
-    
-    cursor.execute(forslag_query, SQL_query_params)
-    
+
+    try:
+        cursor.execute(forslag_query, SQL_query_params)
+    except psycopg2.errors.InvalidRegularExpression:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        bugge.respond_error(
+            response_type = "JSON",
+            error_code = 422,
+            error_msg = "An invalid regular expression was passed as search parameter")
+        return
+            
     row_count = 0
     rows = []
     for row in cursor:
