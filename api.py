@@ -543,8 +543,10 @@ def show_forslag():
         """
         SELECT forslag.forslagid, tittel, forslag, lagt_til, brukerid, forslag.statusid,
         forslagstatus.beskrivelse,
-        CASE WHEN reaksjoner.num_reaksjoner is NULL THEN 0 END as num_reaksjoner,
-        CASE WHEN reaksjoner.cur_user_reacted is NULL THEN FALSE END as cur_user_reacted
+        CASE WHEN reaksjoner.num_reaksjoner is 
+        NULL THEN 0 ELSE reaksjoner.num_reaksjoner END as num_reaksjoner,
+        CASE WHEN reaksjoner.cur_user_reacted is 
+        NULL THEN FALSE ELSE reaksjoner.cur_user_reacted END as cur_user_reacted
         
         FROM forslag INNER JOIN forslagstatus ON
         forslag.statusid = forslagstatus.statusid
