@@ -32,7 +32,7 @@ bugge.init_DB()
 
 # Add or remove a reaction.
 # Normally, you can only add or remove reactions on your own behalf
-# Payload is {[brukerid: <bid>], forslagid: <fid>, reaksjonstypeid: <id>}
+# Payload is {[brukerid: <id>], forslagid: <id>, reaksjonstypeid: <id>}
 # brukerid is optional, and only relevant for superusers. Normal users
 # trying to react on someone elses behalf must be stopped and sent a 403 forbidden message.
 # When brukerid is not specified, the id of the currently logged in user is used
@@ -83,6 +83,7 @@ def react_to_forslag():
     
 
     # If an optional field is absent, we just move on
+    # All optional fields have automatic defaults
     for key in optional_fields:
         try:
             value = payload_dict[key]
@@ -427,14 +428,64 @@ def add_forslag():
     cursor.close()
 
 # Must support filtering what forslag is selected. Use query parameters for this
+# Recognised parameters:
+# sorter = <[dato|stemmer|kategori]>-<[asc|desc]>
+# kategorier = [<list>]
+# substreng = <substreng>
 @bugge.route("/forslag", "GET")
 def show_forslag():
+    # First all parameters must be prepared
+    # What user is currently logged on?
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+
+    # Then we must construct the parts of the query that depends on the query
+    query_dict = parse_qs(bugge.env["QUERY_STRING"])
+
+    # First the ordering. If no ordering parameter is specified,
+    # sort by date descending.
+    forslagQuerySort = "ORDER BY lagt_til DESC"
+    if("sorter" in query_dict):
+        sorterValue = query_dict["sorter"][0] #Should only be one value for this parameter
+        (field, order) = sorterValue.split('-')
+        (field, order) = (field.lower(), order.upper())
+
+        paramIsValid = False
+
+        print(field, order, file=sys.stderr)
+        
+        # Parameter must be of a valid value
+        # This is important to make sure user input does not contain SQL and such
+        if(field in ["dato", "stemmer", "kategori"] and order in ["ASC", "DESC"]):
+            paramIsValid = True
+
+        if(paramIsValid):
+            if(field == "dato"):
+                field = "lagt_til"
+
+            if(field == "stemmer"):
+                field = "num_reaksjoner"
+
+            if(field == "kategori"):
+                field = "forslag.statusid"
+            
+            forslagQuerySort = "ORDER BY " + field + " " + order
+
+        # Illegal parameters should return a 422
+        else:
+            bugge.respond_error("JSON",
+                                422,
+                                error_msg=\
+                                "Illegal value for query parameter sorter: " + sorterValue)
+            return
+    
     cursor = bugge.get_DB_cursor()
-    forslagQuery =\
+    forslagQueryBase =\
         """
         SELECT forslag.forslagid, tittel, forslag, lagt_til, brukerid, forslag.statusid,
-        forslagstatus.beskrivelse, reaksjoner.num_reaksjoner, reaksjoner.cur_user_reacted
+        forslagstatus.beskrivelse,
+        CASE WHEN reaksjoner.num_reaksjoner is NULL THEN 0 END as num_reaksjoner,
+        CASE WHEN reaksjoner.cur_user_reacted is NULL THEN FALSE END as cur_user_reacted
+        
         FROM forslag INNER JOIN forslagstatus ON
         forslag.statusid = forslagstatus.statusid
         LEFT JOIN (
@@ -445,8 +496,9 @@ def show_forslag():
             GROUP BY forslagid
         ) AS reaksjoner
         ON reaksjoner.forslagid = forslag.forslagid
-        ORDER BY lagt_til DESC
         """
+
+    forslagQuery = forslagQueryBase + forslagQuerySort
 
     
     cursor.execute(forslagQuery, [cur_user_id])
@@ -461,13 +513,13 @@ def show_forslag():
     row_count = 0
     for row in rows:
         # Handle forslag without reaksjoner
-        num_reaksjoner = row[7]
-        if(num_reaksjoner == None):
-            num_reaksjoner = 0
+        #num_reaksjoner = row[7]
+        #if(num_reaksjoner == None):
+        #    num_reaksjoner = 0
 
-        cur_user_reacted = row[8]
-        if(cur_user_reacted == None):
-            cur_user_reacted = False
+        #cur_user_reacted = row[8]
+        #if(cur_user_reacted == None):
+        #    cur_user_reacted = False
 
         
         
@@ -478,15 +530,15 @@ def show_forslag():
             "lagt_til": str(row[3]),
             "statusid": row[5],
             "statusbeskrivelse": row[6],
-            "num_reaksjoner": num_reaksjoner,
-            "cur_user_reacted": cur_user_reacted
+            "num_reaksjoner": row[7],
+            "cur_user_reacted": row[8]
         }
         row_count += 1
         
     bugge.respond_JSON(response)
 
 # The api root should contain instructions for api use
-@bugge.route("", "GET")
+@bugge.route("/", "GET")
 def show_help():
     bugge.respond_HTML("<h1>Snauweb API</h1> <p>Her burde det stå instruksjoner for API-bruk")
 
