@@ -432,6 +432,11 @@ def add_forslag():
 # sorter = <[dato|stemmer|kategori]>-<[asc|desc]>
 # kategorier = [<list>]
 # sok = <substreng>
+#
+# sok supports regular expressions to some extent, not sure what special characters
+# are removed when the prepared statement algorithm is run. It matches both
+# header and body of forslag.
+# A match in either means the forslag is included in the response
 @bugge.route("/forslag", "GET")
 def show_forslag():
     # First all parameters must be prepared
@@ -456,6 +461,7 @@ def show_forslag():
         if(field in ["dato", "stemmer", "kategori"] and order in ["ASC", "DESC"]):
             param_is_valid = True
 
+        # No user input is included directly
         if(param_is_valid):
             if(field == "dato"):
                 field = "lagt_til"
@@ -476,10 +482,56 @@ def show_forslag():
                                 "Illegal value for query parameter sorter: " + sorterValue)
             return
 
+
+    # To filter on categories, we use the IN <tuple> sql expression
+    valid_category_ids = api_utils.get_valid_category_ids(bugge, DB_wrap)
+    included_categories = valid_category_ids # Default is to include all valid categories
+    
+    # If the query parameters specifies categories,
+    # check what valid ids are indcluded and add them
+    if("kategorier" in query_dict):
+        
+        # Loop through all requested kategorier, look for valid ones
+        requested_category_list = query_dict["kategorier"][0].split(',')
+        included_categories = [] # Start with an empty list
+        for category in requested_category_list:
+            # We must parse the category as int to compare it to the id list
+            category_as_int = -1
+            try:
+                category_as_int = int(category)
+            except Exception:
+                continue #a non-int "category id" is ignored, try the next one
+                
+                
+            if(category_as_int in valid_category_ids):
+                included_categories.append(category_as_int)
+                    
+        
+    # Now we need to check if any valid category ids made it. If not,
+    # the query fragment must be set to "true" to not give a syntax error
+    # (The postgres SQL dialect does not permit an empty tuple in an IN expression)
+
+    forslag_query_category = "true"
+
+    # If a list of kategoriids were provided but none were valid, return nothing
+    if(len(included_categories) == 0):
+        forslag_query_category = "false"
+    
+    # A single-item tuple is printed with an extra comma we don't want.
+    # Needs separate handling
+    if(len(included_categories) == 1):
+        forslag_query_category = \
+            " (forslag.statusid in(" + str(included_categories[0]) + ")) "
+
+    # The built in stringification of tuples otherwise does what we want
+    if(len(included_categories) > 1):
+        forslag_query_category = \
+            " (forslag.statusid in" + str(tuple(included_categories)) + ") "
+        
     # Then we must add the search parameter. By default nothing
     # As this is free text, it must be added as a parameter to the prepared statement
     sok_value = ".*" # by default, match all
-    forslag_query_sok = " WHERE tittel ~ %s OR forslag ~%s "
+    forslag_query_sok = " (tittel ~ %s OR forslag ~ %s) "
     if("sok" in query_dict):
         sok_param_value = query_dict["sok"][0]
          # As this is included in a prepared statement,
@@ -508,9 +560,15 @@ def show_forslag():
 
     forslag_query = (
         forslag_query_base +
+        " WHERE " +
+        forslag_query_category +
+        " AND " +
         forslag_query_sok +
         forslag_query_sort
     )
+    
+    print(forslag_query, file = sys.stderr)
+    
     SQL_query_params = [cur_user_id, sok_value, sok_value]
     
     cursor.execute(forslag_query, SQL_query_params)
@@ -535,7 +593,8 @@ def show_forslag():
             "cur_user_reacted": row[8]
         }
         row_count += 1
-        
+
+    cursor.close()
     bugge.respond_JSON(response)
 
 # The api root should contain instructions for api use

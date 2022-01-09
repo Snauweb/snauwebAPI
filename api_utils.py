@@ -2,8 +2,24 @@
 
 from urllib.parse import parse_qs
 
+# Get a list of valid kategori ids
+def get_valid_category_ids(bugge, dbwrap):
+    cursor = bugge.get_DB_cursor()
+    query = \
+        """
+        SELECT statusid FROM forslagstatus
+        """
 
-# Contains helper functions for the main api endpoint
+    cursor.execute(query)
+    
+    result_list = []
+    for result in cursor:
+        result_list += result
+
+    cursor.close()
+    return result_list
+
+    
 
 # Get number of reactions for all ids in parameter
 def get_single_reaction_count(forslagid, userid, bugge, dbwrap):
