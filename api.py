@@ -597,7 +597,7 @@ def show_forslag():
     # Then we must add the search parameter. By default nothing
     # As this is free text, it must be added as a parameter to the prepared statement
     sok_value = "%" # by default, match all (in regex, this would be .*)
-     # ~* means case insensetive match
+     # ILIKE means case insensetive match
     forslag_query_sok = " (tittel ILIKE %s OR forslag ILIKE %s) "
     if("sok" in query_dict):
         sok_param_value = query_dict["sok"][0]
@@ -639,7 +639,6 @@ def show_forslag():
     
     
     SQL_query_params = [cur_user_id, sok_value, sok_value]
-    
     cursor.execute(forslag_query, SQL_query_params)
                 
     row_count = 0
@@ -651,6 +650,7 @@ def show_forslag():
     response = [{} for x in range(0, row_count)]
     row_count = 0
     for row in rows:
+        forslag_user_id = row[4]
         response[row_count] = {
             "forslagid": row[0],
             "tittel": row[1],
@@ -659,7 +659,9 @@ def show_forslag():
             "statusid": row[5],
             "statusbeskrivelse": row[6],
             "num_reaksjoner": row[7],
-            "cur_user_reacted": row[8]
+            "cur_user_reacted": row[8],
+            "cur_user_deleter": (forslag_user_id == cur_user_id),
+            "cur_user_editor": (forslag_user_id == cur_user_id)
         }
         row_count += 1
 
