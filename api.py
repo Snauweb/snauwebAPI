@@ -175,8 +175,7 @@ def react_to_forslag():
 
     
     # Commit the queries using the DB connection contained in Bugge
-    # For some reason this is required when altering the database, but not when reading
-    bugge.DB.connection.commit()
+    bugge.commit_DB()
 
     # Try catch to ensure no exceptions even if the cursors contain stuff for some reason
     try:
@@ -365,10 +364,77 @@ def get_brukerinfo():
     bugge.respond_JSON(response)
 
 
+# TODO once more auth groups are in, allow any admin or whatever to delete anything
+# till then, only owner might delete
+# This endpoint allows authorised users to delete a forslag
+# Requires an id in the query parameters
+@bugge.route("/forslag", "DELETE")
+def delete_forslag():
+    cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+    query_params = parse_qs(bugge.env["QUERY_STRING"])
+    # This endpoint does not make sense if id is not specified
+    # The user does not get to delete the concept of a forslag
+    if("id" not in query_params):
+        bugge.respond_error("JSON", 422, error_msg="No id provided in query parameters")
+        return
 
-# This endpoint auto-includes the currently logged in user, and marks the forslag as ny (status 1)
+    forslag_id = query_params["id"][0] 
+    # Now we must check the owner of the forslag
+    owner_cursor = bugge.get_DB_cursor()
+    owner_query = \
+        """
+        SELECT brukerid FROM forslag WHERE forslagid=%s
+        """
+
+    owner_cursor.execute(owner_query, [forslag_id])
+    owner_result = owner_cursor.fetchone()
+    # If the requested forslag is not in database,
+    # return a 200 as the end results of beeing removed and not beeing there are the same
+    if(owner_result == None):
+        bugge.respond_JSON(body={"id":forslag_id})
+        return
+
+    owner_result = owner_result[0] # unpack result id from tuple
+
+    # We only expect one result. Try catch just in case
+    try:
+        owner_cursor.close();
+    except Exception:
+        pass 
+
+    # Not authorised! Return an error message and abort processing 
+    if(owner_result != cur_user_id):
+        bugge.respond_error("JSON", 403,
+                            error_msg=\
+                            "Unauthorised to delete forslag with id " +
+                            forslag_id)
+        return
+    
+
+    # Now we know the user is authorised to delete
+    delete_query =\
+        """
+        DELETE FROM forslag WHERE forslagid=%s
+        """
+
+
+    # If this fails, the wrapping server will return a 500
+    delete_cursor = bugge.get_DB_cursor()
+    delete_cursor.execute(delete_query, [forslag_id])
+    delete_cursor.close() # Should not contain anything
+
+    # Commit change
+    bugge.commit_DB()
+    
+    # Respond with success
+    bugge.respond_JSON(body={"id":forslag_id})
+
+    
+# This endpoint auto-includes the currently logged in user,
+# and marks the forslag as ny (status 1)
 @bugge.route("/forslag", "POST")
 def add_forslag():
+    print("POSTING AT FORSLAG????", file=sys.stderr)
     bugge.read_payload()
     payload_dict = bugge.parse_payload_json()
     if (payload_dict == None):
@@ -393,6 +459,7 @@ def add_forslag():
     # Only one user should match, choose first found
     user_id = id_query_cursor.fetchone();
 
+    
     # Discard any items remaing in cursor, regardless of exceptions thrown
     try:
         id_query_cursor.close();
@@ -424,7 +491,7 @@ def add_forslag():
         VALUES (%s, %s, %s, %s, %s)"
     cursor = bugge.get_DB_cursor()
     cursor.execute(query, [tittel, forslag, date_string, user_id, 1])
-    bugge.DB.connection.commit()
+    bugge.commit_DB()
     bugge.respond_JSON(payload_dict, status=201)
     cursor.close()
 

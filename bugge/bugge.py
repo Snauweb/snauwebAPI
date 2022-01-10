@@ -152,6 +152,7 @@ class Bugge:
         else:
             # Read CONTENT_LENGTH number of bytes from stdin
             self.payload = sys.stdin.read(int(self.env["CONTENT_LENGTH"]))
+
             
 
     ### Input processing
@@ -216,6 +217,13 @@ class Bugge:
             raise Exception("Database handler not initialised, init_DB must be run before any other DB actions")
         return self.DB.connection.cursor()
 
+    # Commits any outstanding changes
+    def commit_DB(self):
+        if(self.DB == None):
+            raise Exception("Database handler not initialised, init_DB must be run before any other DB actions")
+        print("Committing!", file=sys.stderr)
+        self.DB.connection.commit()
+    
 
     ### Response handlers
     def respond_HTML(self, body, status=200):

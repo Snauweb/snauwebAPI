@@ -9,6 +9,9 @@ class TestGCIHTTPServer(http.server.CGIHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
 
+    def do_DELETE(self):
+        self.do_POST()
+
 handler = TestGCIHTTPServer
 handler.cgi_directories += ["/snauwebAPI"]
 
