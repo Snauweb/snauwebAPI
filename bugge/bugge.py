@@ -140,7 +140,9 @@ class Bugge:
             self.env["REQUEST_METHOD"] = os.environ["REQUEST_METHOD"]
 
             # Read lenght of posted content
-            if(self.env["REQUEST_METHOD"] == "POST"):
+            if(self.env["REQUEST_METHOD"] == "POST" or
+               self.env["REQUEST_METHOD"] == "DELETE" or
+               self.env["REQUEST_METHOD"] == "PATCH"):
                 self.env["CONTENT_LENGTH"] = os.environ["CONTENT_LENGTH"]
 
     def read_payload(self):

@@ -31,6 +31,8 @@ bugge.read_config(configPath)
 bugge.init_DB()
 
 
+# *********** REAKSJON ***********
+
 # Add or remove a reaction.
 # Normally, you can only add or remove reactions on your own behalf
 # Payload is {[brukerid: <id>], forslagid: <id>, reaksjonstypeid: <id>}
@@ -267,6 +269,8 @@ def get_reactions():
     
 
 
+# *********** ALIAS ***********
+    
 # Shows all active aliases
 @bugge.route("/bruker/alias", "GET")
 def get_active_aliases():
@@ -299,6 +303,8 @@ def get_active_aliases():
     
     cursor.close()
 
+# *********** BRUKER ***********
+    
 # As of now, any authenticated user is allowed to view the same user info
 # Accepts id as a query parameter. If more ids, pick first
 @bugge.route("/bruker", "GET")
@@ -364,6 +370,94 @@ def get_brukerinfo():
     bugge.respond_JSON(response)
 
 
+# *********** FORSLAG ***********
+    
+# Update an existing forslag.
+# Payload specifies what is getting updated
+# Initially only set up to look for forslag status updates
+@bugge.route("/forslag", "PATCH")
+def update_forslag():
+
+    bugge.read_payload()
+    payload_dict = bugge.parse_payload_json()
+
+    if(payload_dict == None):
+        bugge.respond_error(
+            response_type="JSON",
+            error_code=422,
+            error_msg="malformed payload"
+        )
+        return
+
+    # Only valid edits are of status, thus statusid is a required field
+    required_fields = ["forslagid", "statusid"]
+    for field in required_fields:
+        if field not in payload_dict:
+            bugge.respond_error(
+                response_type="JSON",
+                error_code=422,
+                error_msg=("payload lacking required field " + field)
+            )
+            return
+            
+
+    
+    cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+    forslag_id = payload_dict["forslagid"]
+    new_status_id = payload_dict["statusid"]
+
+    # Now we must check the owner of the forslag
+    owner_cursor = bugge.get_DB_cursor()
+    owner_query = \
+        """
+        SELECT brukerid FROM forslag WHERE forslagid=%s
+        """
+
+    owner_cursor.execute(owner_query, [forslag_id])
+    owner_result = owner_cursor.fetchone()
+
+    # We only expect one result. Try catch just in case
+    try:
+        owner_cursor.close();
+    except Exception:
+        pass 
+
+    # If the requested forslag is not in database return a 404
+    if(owner_result == None):
+        bugge.respond_error(
+            response_type="JSON",
+            error_code=404,
+            error_msg= \
+            "Failed to update forslag with id " + forslag_id + \
+            " no such forslag in database"
+        )
+        return
+
+    owner_result_id = owner_result[0] # unpack result id from tuple
+
+    # Is this user allowed to update (aka is this user the owner?)
+    if(owner_result_id != cur_user_id):
+        bugge.respond_error("JSON", 403,
+                            error_msg=\
+                            ("Unauthorised to update forslag with id " +
+                             forslag_id))
+        return
+
+    
+    # At this point, everything should be in order, we can start the update
+    update_query = \
+        """
+        UPDATE forslag
+        SET statusid=%s
+        WHERE forslagid=%s
+        """
+    update_cursor = bugge.get_DB_cursor()
+    update_cursor.execute(update_query, [new_status_id, forslag_id])
+    bugge.commit_DB()
+    update_cursor.close()
+
+     
+    
 # TODO once more auth groups are in, allow any admin or whatever to delete anything
 # till then, only owner might delete
 # This endpoint allows authorised users to delete a forslag
@@ -388,6 +482,13 @@ def delete_forslag():
 
     owner_cursor.execute(owner_query, [forslag_id])
     owner_result = owner_cursor.fetchone()
+
+     # We only expect one result. Try catch just in case
+    try:
+        owner_cursor.close();
+    except Exception:
+        pass
+    
     # If the requested forslag is not in database,
     # return a 200 as the end results of beeing removed and not beeing there are the same
     if(owner_result == None):
@@ -396,18 +497,12 @@ def delete_forslag():
 
     owner_result = owner_result[0] # unpack result id from tuple
 
-    # We only expect one result. Try catch just in case
-    try:
-        owner_cursor.close();
-    except Exception:
-        pass 
-
     # Not authorised! Return an error message and abort processing 
     if(owner_result != cur_user_id):
         bugge.respond_error("JSON", 403,
                             error_msg=\
-                            "Unauthorised to delete forslag with id " +
-                            forslag_id)
+                            ("Unauthorised to delete forslag with id " +
+                             forslag_id))
         return
     
 
@@ -434,7 +529,6 @@ def delete_forslag():
 # and marks the forslag as ny (status 1)
 @bugge.route("/forslag", "POST")
 def add_forslag():
-    print("POSTING AT FORSLAG????", file=sys.stderr)
     bugge.read_payload()
     payload_dict = bugge.parse_payload_json()
     if (payload_dict == None):

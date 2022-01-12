@@ -15,7 +15,7 @@
 -- 100 chars should be a reasonable upper limit
 CREATE TABLE brukeralias (
        id SERIAL PRIMARY KEY,
-       brukerid INTEGER NOT NULL references "tbl_User"(userid),
+       brukerid INTEGER NOT NULL references "tbl_User"(userid) ON UPDATE CASCADE ON DELETE CASCADE,
        brukeralias VARCHAR(100) NOT NULL UNIQUE
 );
 

@@ -1,5 +1,6 @@
 import http.server
 import socketserver
+import sys
 
 PORT = 8000
 DIRECTORY = "./"
@@ -8,8 +9,12 @@ DIRECTORY = "./"
 class TestGCIHTTPServer(http.server.CGIHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
+      
 
     def do_DELETE(self):
+        self.do_POST()
+
+    def do_PATCH(self):
         self.do_POST()
 
 handler = TestGCIHTTPServer
