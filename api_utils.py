@@ -2,6 +2,42 @@
 
 from urllib.parse import parse_qs
 
+# Get user permissions for a resource
+# Returns a dictionary of permissions. If no resource is found, return false for all
+def get_permissions(userid, resource_name, bugge, dbwrap):
+    query = \
+        """
+        SELECT resurs, opprette, lese, redigere, slette
+        FROM bruker_tilgangsgruppe
+        INNER JOIN tilgangsgruppe USING(gruppeid)
+        INNER JOIN tilgangsgruppe_tilgang USING(gruppeid)
+        WHERE brukerid=%s and resurs=%s;
+        """
+
+    result = None
+    
+    with bugge.get_DB_cursor() as cursor:
+        cursor.execute(query, [userid, resource_name])
+        result = cursor.fetchone() # Only one should be found
+
+    result_data = {}
+    if(result == None):
+        result_data = {
+            "opprette": False,
+            "lese": False,
+            "redigere": False,
+            "slette": False
+        }
+    else:
+        result_data = {
+            "opprette": result[1],
+            "lese": result[2],
+            "redigere": result[3],
+            "slette": result[4]
+        }
+
+    return result_data
+
 # Get a list of valid kategori ids
 def get_valid_category_ids(bugge, dbwrap):
     cursor = bugge.get_DB_cursor()

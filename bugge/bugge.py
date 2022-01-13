@@ -223,7 +223,6 @@ class Bugge:
     def commit_DB(self):
         if(self.DB == None):
             raise Exception("Database handler not initialised, init_DB must be run before any other DB actions")
-        print("Committing!", file=sys.stderr)
         self.DB.connection.commit()
     
 

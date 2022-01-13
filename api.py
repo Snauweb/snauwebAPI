@@ -401,8 +401,13 @@ def update_forslag():
             return
             
 
-    
+    # unlike for posting and deleting, editing a forslag requires
+    # special permission. Check it
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+
+    cur_user_forslag_permissions = api_utils.get_permissions(
+        cur_user_id, 'forslag', bugge, DB_wrap)
+    
     forslag_id = payload_dict["forslagid"]
     new_status_id = payload_dict["statusid"]
 
@@ -435,8 +440,8 @@ def update_forslag():
 
     owner_result_id = owner_result[0] # unpack result id from tuple
 
-    # Is this user allowed to update (aka is this user the owner?)
-    if(owner_result_id != cur_user_id):
+    # Is this user allowed to update?
+    if(cur_user_forslag_permissions["redigere"] == False):
         bugge.respond_error("JSON", 403,
                             error_msg=\
                             ("Unauthorised to update forslag with id " +
@@ -497,8 +502,13 @@ def delete_forslag():
 
     owner_result = owner_result[0] # unpack result id from tuple
 
-    # Not authorised! Return an error message and abort processing 
-    if(owner_result != cur_user_id):
+    is_authorised = owner_result;
+    # If the user is not the owner of the current forslag, check for general delete rights
+    if(is_authorised == False):
+        permissions = api_utils.get_permissions(cur_user_id, 'forslag', bugge, DB_wrap)
+        is_authorised = permissions['slette']
+    
+    if(is_authorised == False):
         bugge.respond_error("JSON", 403,
                             error_msg=\
                             ("Unauthorised to delete forslag with id " +
@@ -513,7 +523,7 @@ def delete_forslag():
         """
 
 
-    # If this fails, the wrapping server will return a 500
+    # If this fails, the wrapping server will return a 500, don't think about it
     delete_cursor = bugge.get_DB_cursor()
     delete_cursor.execute(delete_query, [forslag_id])
     delete_cursor.close() # Should not contain anything
@@ -734,7 +744,11 @@ def show_forslag():
     
     SQL_query_params = [cur_user_id, sok_value, sok_value]
     cursor.execute(forslag_query, SQL_query_params)
-                
+
+    # We must check this users general permissions for forslag
+    permissions = api_utils.get_permissions(
+        cur_user_id, 'forslag', bugge, DB_wrap)
+    
     row_count = 0
     rows = []
     for row in cursor:
@@ -745,6 +759,8 @@ def show_forslag():
     row_count = 0
     for row in rows:
         forslag_user_id = row[4]
+        cur_user_deleter = (forslag_user_id == cur_user_id) or permissions["slette"]
+        cur_user_editor = permissions["redigere"]
         response[row_count] = {
             "forslagid": row[0],
             "tittel": row[1],
@@ -754,8 +770,8 @@ def show_forslag():
             "statusbeskrivelse": row[6],
             "num_reaksjoner": row[7],
             "cur_user_reacted": row[8],
-            "cur_user_deleter": (forslag_user_id == cur_user_id),
-            "cur_user_editor": (forslag_user_id == cur_user_id)
+            "cur_user_deleter": cur_user_deleter,
+            "cur_user_editor": cur_user_editor
         }
         row_count += 1
 
