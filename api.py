@@ -392,8 +392,6 @@ def update_forslag():
 
     bugge.read_payload()
     payload_dict = bugge.parse_payload_json()
-
-    print("got past payload parsing", file=sys.stderr)
     
     if(payload_dict == None):
         bugge.respond_error(
@@ -419,7 +417,6 @@ def update_forslag():
     # special permission. Check it
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
 
-    print("got past cur user id", file=sys.stderr)
     if(cur_user_id == -1):
         bugge.respond_error("JSON", 403,
                             error_msg="The current user was not found in alias list")
@@ -430,7 +427,6 @@ def update_forslag():
         cur_user_id, 'forslag', bugge, DB_wrap)
 
 
-    print("got past getting permission", file=sys.stderr)
     forslag_id = payload_dict["forslagid"]
     new_status_id = payload_dict["statusid"]
 

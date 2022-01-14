@@ -121,7 +121,6 @@ class Bugge:
             from env import env 
             self.env = env
         else:
-            print("Current method:", os.environ["REQUEST_METHOD"], file=sys.stderr)
             # Apache does not provide PATH_INFO if the request is for the API root
             # Thus we need to make sure it exist before we try to read it
             if "PATH_INFO" in os.environ:
