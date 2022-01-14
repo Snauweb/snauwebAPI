@@ -393,6 +393,8 @@ def update_forslag():
     bugge.read_payload()
     payload_dict = bugge.parse_payload_json()
 
+    print("got past payload parsing", file=sys.stderr)
+    
     if(payload_dict == None):
         bugge.respond_error(
             response_type="JSON",
@@ -417,6 +419,7 @@ def update_forslag():
     # special permission. Check it
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
 
+    print("got past cur user id", file=sys.stderr)
     if(cur_user_id == -1):
         bugge.respond_error("JSON", 403,
                             error_msg="The current user was not found in alias list")
@@ -425,7 +428,9 @@ def update_forslag():
     
     cur_user_forslag_permissions = api_utils.get_permissions(
         cur_user_id, 'forslag', bugge, DB_wrap)
-    
+
+
+    print("got past getting permission", file=sys.stderr)
     forslag_id = payload_dict["forslagid"]
     new_status_id = payload_dict["statusid"]
 
@@ -479,6 +484,11 @@ def update_forslag():
     bugge.commit_DB()
     update_cursor.close()
 
+    # All is well, respond with a 200
+    bugge.respond_JSON({
+        "forslagid": forslag_id,
+        "statusid": new_status_id
+    })
      
     
 # TODO once more auth groups are in, allow any admin or whatever to delete anything
