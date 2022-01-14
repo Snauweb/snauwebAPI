@@ -441,7 +441,7 @@ def update_forslag():
     owner_result_id = owner_result[0] # unpack result id from tuple
 
     # Is this user allowed to update?
-    if(cur_user_forslag_permissions["redigere"] == False):
+    if("redigere" not in cur_user_forslag_permissions):
         bugge.respond_error("JSON", 403,
                             error_msg=\
                             ("Unauthorised to update forslag with id " +
@@ -506,7 +506,7 @@ def delete_forslag():
     # If the user is not the owner of the current forslag, check for general delete rights
     if(is_authorised == False):
         permissions = api_utils.get_permissions(cur_user_id, 'forslag', bugge, DB_wrap)
-        is_authorised = permissions['slette']
+        is_authorised = 'slette' in permissions
     
     if(is_authorised == False):
         bugge.respond_error("JSON", 403,
@@ -759,8 +759,10 @@ def show_forslag():
     row_count = 0
     for row in rows:
         forslag_user_id = row[4]
-        cur_user_deleter = (forslag_user_id == cur_user_id) or permissions["slette"]
-        cur_user_editor = permissions["redigere"]
+        cur_user_deleter = \
+            (forslag_user_id == cur_user_id) \
+            or "slette" in permissions
+        cur_user_editor = "redigere" in permissions
         response[row_count] = {
             "forslagid": row[0],
             "tittel": row[1],
