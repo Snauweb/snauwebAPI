@@ -50,6 +50,11 @@ bugge.init_DB()
 def react_to_forslag():
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
 
+    if(cur_user_id == -1):
+        bugge.respond_error("JSON", 403,
+                            error_msg="The current user was not found in alias list")
+        return
+
     # Read and validate payload
     bugge.read_payload()
     payload_dict = bugge.parse_payload_json()
@@ -219,6 +224,12 @@ def react_to_forslag():
 @bugge.route("/reaksjon", "GET")
 def get_reactions():
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+
+    if(cur_user_id == -1):
+        bugge.respond_error("JSON", 403,
+                            error_msg="The current user was not found in alias list")
+        return
+
     
     query_dict = parse_qs(bugge.env["QUERY_STRING"])
     reaction_query = ""
@@ -405,6 +416,12 @@ def update_forslag():
     # special permission. Check it
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
 
+    if(cur_user_id == -1):
+        bugge.respond_error("JSON", 403,
+                            error_msg="The current user was not found in alias list")
+        return
+
+    
     cur_user_forslag_permissions = api_utils.get_permissions(
         cur_user_id, 'forslag', bugge, DB_wrap)
     
@@ -470,6 +487,11 @@ def update_forslag():
 @bugge.route("/forslag", "DELETE")
 def delete_forslag():
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+    if(cur_user_id == -1):
+        bugge.respond_error("JSON", 403,
+                            error_msg="The current user was not found in alias list")
+        return
+
     query_params = parse_qs(bugge.env["QUERY_STRING"])
     # This endpoint does not make sense if id is not specified
     # The user does not get to delete the concept of a forslag
@@ -612,7 +634,11 @@ def show_forslag():
     # First all parameters must be prepared
     # What user is currently logged on?
     cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
-
+    if(cur_user_id == -1):
+        bugge.respond_error("JSON", 403,
+                            error_msg="The current user was not found in alias list")
+        return
+    
     # Then we must construct the parts of the query that depends on the query
     query_dict = parse_qs(bugge.env["QUERY_STRING"])
 

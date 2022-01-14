@@ -132,4 +132,9 @@ def get_cur_user_id(bugge, dbwrap):
     except Exception:
         pass
 
-    return result[0]
+    # If the user is not found, it's an indication of some larger problem
+    # Still, the api should not crash just because this is the case
+    if(result == None):
+        return -1
+    else:
+        return result[0]
