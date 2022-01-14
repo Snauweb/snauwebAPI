@@ -14,7 +14,7 @@ class TestGCIHTTPServer(http.server.CGIHTTPRequestHandler):
     def do_DELETE(self):
         self.do_POST()
 
-    def do_PATCH(self):
+    def do_PUT(self):
         self.do_POST()
 
 handler = TestGCIHTTPServer

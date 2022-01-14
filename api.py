@@ -386,7 +386,8 @@ def get_brukerinfo():
 # Update an existing forslag.
 # Payload specifies what is getting updated
 # Initially only set up to look for forslag status updates
-@bugge.route("/forslag", "PATCH")
+# Using PUT over PATCH as it is more common (?)
+@bugge.route("/forslag", "PUT")
 def update_forslag():
 
     bugge.read_payload()
