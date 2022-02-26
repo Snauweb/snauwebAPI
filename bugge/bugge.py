@@ -181,6 +181,7 @@ class Bugge:
     ### Requests and routing
     # Decorator used to add route, to create a pattern resembeling flask
     def route(self, route, method):
+        bugge = self;
         def decorator(route_handler):
             self.add_route(route_handler, route, method)
         return decorator

@@ -31,6 +31,33 @@ bugge.read_config(configPath)
 bugge.init_DB()
 
 
+# *********** Låter ***********
+@bugge.route("/laater", "GET")
+def get_noter():
+    cursor = bugge.get_DB_cursor();
+
+    laater_query = """
+    SELECT melid, name, dansid
+    FROM "tbl_Melody" LEFT JOIN "tbl_Nickname" USING (melid)
+    ORDER BY name ASC;
+    """
+
+    cursor.execute(laater_query)
+    
+    response = []
+
+    for row in cursor:
+        response.append({
+            "id": row[0],
+            "navn": row[1],
+            "sjanger": row[2]
+        })
+    
+    cursor.close();
+
+    bugge.respond_JSON(response)
+
+
 # *********** REAKSJON ***********
 
 # Add or remove a reaction.
@@ -40,7 +67,6 @@ bugge.init_DB()
 # trying to react on someone elses behalf must be stopped and sent a 403 forbidden message.
 # When brukerid is not specified, the id of the currently logged in user is used
 # Query parameters are not used
-
 
 # TODO The validation logic in this endpoint is probably usefull elsewhere
 # Make a proper helper function for it. If too expensive, offload to the DB engine
@@ -88,7 +114,7 @@ def react_to_forslag():
         # Valid field, update expected_fields
         else:
             expected_fields[key] = value;
-    
+            
 
     # If an optional field is absent, we just move on
     # All optional fields have automatic defaults
@@ -270,14 +296,12 @@ def get_reactions():
             }
 
             row_count += 1
-         
+            
 
         
     # Return the completed response
     bugge.respond_JSON(response)
 
-    
-    
 
 
 # *********** ALIAS ***********
