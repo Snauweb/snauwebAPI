@@ -68,7 +68,9 @@ class DB_wrap:
         
         
 # Framework class
-# Handles DB connection, routing, HTML and json response
+# Handles DB connection, routing, HTML and json response,
+# as well as query parameter parsing, POST payload handling, db connection,
+# db transactions etc
 class Bugge:
     def __init__(self):
         self.config_dict = None # None indicates the config file is not read

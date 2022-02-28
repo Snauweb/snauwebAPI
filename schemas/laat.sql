@@ -16,7 +16,12 @@ CREATE TABLE "tbl_Nickname" (
        description TEXT NOT NULL
 );
 
+
+
+
+-- Eksempelspørringer
 -- For å hente id, navn og dans for alle låter i alfabetisk rekkefølge
 SELECT melid, name, dansid
 FROM "tbl_Melody" LEFT JOIN "tbl_Nickname" USING (melid)
 ORDER BY name ASC;
+
