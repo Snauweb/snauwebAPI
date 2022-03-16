@@ -237,8 +237,8 @@ class Bugge:
     ### Response handlers
     def respond_HTML(self, body, status=200):
         header = \
-        "content-type: text/html; charset=utf-8\r\n" + \
-        "status: " + str(status) + "\r\n\r\n"
+        "Content-type: text/html; charset=utf-8\r\n" + \
+        "Status: " + str(status) + "\r\n\r\n"
         
         response = header + body
         print(response)
@@ -260,9 +260,9 @@ class Bugge:
 
         
         header = \
-        "content-type: text/json; charset=utf-8\r\n" + \
-        "status: " + str(status) + "\r\n" +\
-        "charset: utf-8" + "\r\n\r\n"
+        "Content-type: application/json; charset=utf-8\r\n" + \
+        "Status: " + str(status) + "\r\n" +\
+        "Charset: utf-8" + "\r\n\r\n"
 
         response = header + body
         print(response)
