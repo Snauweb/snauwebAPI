@@ -34,7 +34,7 @@ bugge.init_DB()
 # *********** Låter ***********
 
 @bugge.route("/laater/recordings", "GET")
-def get_laat_sheetmusic():
+def get_laat_recording():
     query_param_dict = parse_qs(bugge.env["QUERY_STRING"])
     if ("id" not in query_param_dict):
         bugge.respond_error("JSON", 422,
@@ -72,7 +72,7 @@ def get_laat_sheetmusic():
 
 # 
 @bugge.route("/laater/sheetmusic", "GET")
-def get_laat_recording():
+def get_laat_sheetmusic():
     cursor = bugge.get_DB_cursor();
     query="""
 
