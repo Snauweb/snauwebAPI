@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs
+
 def setup_routes(bugge):
     setup_get(bugge)
 
