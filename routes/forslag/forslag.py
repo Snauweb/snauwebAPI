@@ -1,3 +1,7 @@
+import sys
+sys.path.append('../../')
+import api_utils
+
 from urllib.parse import parse_qs
 
 def setup_routes(bugge):
@@ -106,7 +110,7 @@ def setup_PUT(bugge):
 
         # unlike for posting and deleting, editing a forslag requires
         # special permission. Check it
-        cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+        cur_user_id = api_utils.get_cur_user_id(bugge)
 
         if(cur_user_id == -1):
             bugge.respond_error("JSON", 403,
@@ -267,7 +271,7 @@ def setup_GET(bugge):
     def show_forslag():
         # First all parameters must be prepared
         # What user is currently logged on?
-        cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+        cur_user_id = api_utils.get_cur_user_id(bugge)
         if(cur_user_id == -1):
             bugge.respond_error("JSON", 403,
                                 error_msg="The current user was not found in alias list")

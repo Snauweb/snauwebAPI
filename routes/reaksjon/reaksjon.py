@@ -1,5 +1,8 @@
 from urllib.parse import parse_qs
 
+import sys
+sys.path.append('../../')
+import api_utils
 
 def setup_routes(bugge):
     setup_POST(bugge)
@@ -28,7 +31,7 @@ def setup_GET(bugge):
         if("id" in query_dict):
             forslagid = query_dict["id"][0]
 
-            result = api_utils.get_single_reaction_count(forslagid, cur_user_id, bugge, DB_wrap)
+            result = api_utils.get_single_reaction_count(forslagid, cur_user_id, bugge)
             # Return a count of 0 if no reactions are found
             if(result == None):
                 response = {
@@ -236,7 +239,7 @@ def setup_POST(bugge):
         # performing a round-trip over the net
         result = api_utils.get_single_reaction_count(
             expected_fields["forslagid"],
-            cur_user_id, bugge, DB_wrap
+            cur_user_id, bugge
         )
         # Return a count of 0 if no reactions are found
         if(result == None):

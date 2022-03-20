@@ -45,7 +45,7 @@ def get_valid_category_ids(bugge):
     
 
 # Get number of reactions for all ids in parameter
-def get_single_reaction_count(forslagid, userid, bugge, dbwrap):
+def get_single_reaction_count(forslagid, userid, bugge):
     reaction_cursor = bugge.get_DB_cursor()
     reaction_query = \
         """
@@ -104,7 +104,7 @@ def is_valid_id(string):
         return False
             
 # Id of user currently logged on
-def get_cur_user_id(bugge, dbwrap):
+def get_cur_user_id(bugge):
     cursor = bugge.get_DB_cursor()
 
     user = bugge.env["REMOTE_USER"]
