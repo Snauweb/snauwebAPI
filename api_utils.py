@@ -4,7 +4,7 @@ from urllib.parse import parse_qs
 
 # Get user permissions for a resource
 # Returns a list of all permitted actions on the given resouce for the given user
-def get_permissions(userid, resource_name, bugge, dbwrap):
+def get_permissions(userid, resource_name, bugge):
     query = \
         """
         SELECT handling
@@ -26,7 +26,7 @@ def get_permissions(userid, resource_name, bugge, dbwrap):
     return result
 
 # Get a list of valid kategori ids
-def get_valid_category_ids(bugge, dbwrap):
+def get_valid_category_ids(bugge):
     cursor = bugge.get_DB_cursor()
     query = \
         """
