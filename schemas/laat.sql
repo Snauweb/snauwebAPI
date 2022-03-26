@@ -16,6 +16,7 @@ CREATE TABLE "tbl_Nickname" (
        description TEXT NOT NULL
 );
 
+-- Opptak
 CREATE TABLE "tbl_Recording" (
        recid SERIAL PRIMARY KEY,
        filename varchar(50) NOT NULL,
@@ -29,6 +30,21 @@ CREATE TABLE "tbl_mel_rec" (
        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+
+-- Noter
+CREATE TABLE "tbl_Sheetmusic" (
+       sheetid SERIAL PRIMARY KEY,
+       filename VARCHAR(100) NOT NULL UNIQUE,
+       description TEXT NOT NULL,
+       hidden BOOLEAN NOT NULL DEFAULT false
+);
+
+CREATE TABLE "tbl_mel_sheet" (
+       melid INTEGER NOT NULL REFERENCES "tbl_Melody"(melid)
+       ON UPDATE CASCADE ON DELETE CASCADE,
+       sheetid INTEGER NOT NULL REFERENCES "tbl_Sheetmusic"(sheetid)
+       ON UPDATE CASCADE ON DELETE CASCADE
+);
 
 -- Eksempelspørringer
 -- For å hente id, navn og dans for alle låter i alfabetisk rekkefølge
