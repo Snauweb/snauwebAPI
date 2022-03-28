@@ -34,7 +34,8 @@ def setup_get(bugge):
              response["sheets"].append({
                  "id": result[0],
                  "filnavn": result[1],
-                 "beskrivelse": result[2]
+                 "beskrivelse": result[2],
+                 "format": "pdf"
              })
          
          cursor.close()
