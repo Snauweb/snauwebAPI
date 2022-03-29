@@ -12,7 +12,7 @@ def get_permissions(userid, resource_name, bugge):
         INNER JOIN tilgangsgruppe USING(gruppeid)
         INNER JOIN tilgangsgruppe_tilgang USING(gruppeid)
         INNER JOIN tilgang USING(tilgangid)
-        WHERE brukerid=2 and resurs='forslag'
+        WHERE brukerid=%s and resurs=%s
         GROUP BY handling
         """
 
