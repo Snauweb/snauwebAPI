@@ -51,7 +51,7 @@ def setup_GET(bugge):
 
         # If no id is given, list all
         else:
-            rows = api_utils.get_all_reaction_counts(cur_user_id, bugge, DB_wrap)
+            rows = api_utils.get_all_reaction_counts(cur_user_id, bugge)
 
             response = [{} for x in range(0, len(rows))]
             row_count = 0

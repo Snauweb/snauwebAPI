@@ -2,7 +2,10 @@ import sys
 sys.path.append('../../')
 import api_utils
 
+import datetime
+
 from urllib.parse import parse_qs
+
 
 def setup_routes(bugge):
     setup_POST(bugge)
@@ -188,7 +191,7 @@ def setup_DELETE(bugge):
     # Requires an id in the query parameters
     @bugge.route("/forslag", "DELETE")
     def delete_forslag():
-        cur_user_id = api_utils.get_cur_user_id(bugge, DB_wrap)
+        cur_user_id = api_utils.get_cur_user_id(bugge)
         if(cur_user_id == -1):
             bugge.respond_error("JSON", 403,
                                 error_msg="The current user was not found in alias list")
@@ -201,7 +204,8 @@ def setup_DELETE(bugge):
             bugge.respond_error("JSON", 422, error_msg="No id provided in query parameters")
             return
 
-        forslag_id = query_params["id"][0] 
+        forslag_id = query_params["id"][0]
+        
         # Now we must check the owner of the forslag
         owner_cursor = bugge.get_DB_cursor()
         owner_query = \
@@ -226,10 +230,18 @@ def setup_DELETE(bugge):
 
         owner_result = owner_result[0] # unpack result id from tuple
 
-        is_authorised = owner_result;
+        print("Owner result:", owner_result, file=sys.stderr)
+        
+        is_authorised = (owner_result == cur_user_id);
+
+        print(
+            "User: ", cur_user_id, "owner:", owner_result, "the same?", is_authorised,
+            file=sys.stderr
+        );
         # If the user is not the owner of the current forslag, check for general delete rights
         if(is_authorised == False):
             permissions = api_utils.get_permissions(cur_user_id, 'forslag', bugge)
+            print("Current user has perms ", permissions, file=sys.stderr)
             is_authorised = 'slette' in permissions
 
         if(is_authorised == False):
@@ -413,6 +425,8 @@ def setup_GET(bugge):
         permissions = api_utils.get_permissions(
             cur_user_id, 'forslag', bugge)
 
+        print("The found permissions", permissions, file=sys.stderr)
+        
         row_count = 0
         rows = []
         for row in cursor:
@@ -427,6 +441,11 @@ def setup_GET(bugge):
                 (forslag_user_id == cur_user_id) \
                 or "slette" in permissions
             cur_user_editor = "redigere" in permissions
+
+            print("current user id", row[4])
+            print("cur_user_editor", cur_user_editor)
+            print("cur_user_deleter", cur_user_deleter)
+
             response[row_count] = {
                 "forslagid": row[0],
                 "tittel": row[1],
