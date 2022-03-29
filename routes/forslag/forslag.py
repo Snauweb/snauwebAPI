@@ -229,19 +229,12 @@ def setup_DELETE(bugge):
             return
 
         owner_result = owner_result[0] # unpack result id from tuple
-
-        print("Owner result:", owner_result, file=sys.stderr)
         
         is_authorised = (owner_result == cur_user_id);
 
-        print(
-            "User: ", cur_user_id, "owner:", owner_result, "the same?", is_authorised,
-            file=sys.stderr
-        );
         # If the user is not the owner of the current forslag, check for general delete rights
         if(is_authorised == False):
             permissions = api_utils.get_permissions(cur_user_id, 'forslag', bugge)
-            print("Current user has perms ", permissions, file=sys.stderr)
             is_authorised = 'slette' in permissions
 
         if(is_authorised == False):
@@ -424,8 +417,6 @@ def setup_GET(bugge):
         # We must check this users general permissions for forslag
         permissions = api_utils.get_permissions(
             cur_user_id, 'forslag', bugge)
-
-        print("The found permissions", permissions, file=sys.stderr)
         
         row_count = 0
         rows = []
@@ -441,11 +432,6 @@ def setup_GET(bugge):
                 (forslag_user_id == cur_user_id) \
                 or "slette" in permissions
             cur_user_editor = "redigere" in permissions
-
-            print("current user id", cur_user_id, file=sys.stderr)
-            print("forslag user id", forslag_user_id, file=sys.stderr)
-            print("cur_user_editor", cur_user_editor, file=sys.stderr)
-            print("cur_user_deleter", cur_user_deleter, file=sys.stderr)
 
             response[row_count] = {
                 "forslagid": row[0],
