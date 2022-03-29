@@ -442,9 +442,9 @@ def setup_GET(bugge):
                 or "slette" in permissions
             cur_user_editor = "redigere" in permissions
 
-            print("current user id", row[4])
-            print("cur_user_editor", cur_user_editor)
-            print("cur_user_deleter", cur_user_deleter)
+            print("current user id", row[4], file=sys.stderr)
+            print("cur_user_editor", cur_user_editor, file=sys.stderr)
+            print("cur_user_deleter", cur_user_deleter, file=sys.stderr)
 
             response[row_count] = {
                 "forslagid": row[0],
