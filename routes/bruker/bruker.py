@@ -74,7 +74,10 @@ def setup_GET(bugge):
         # Include information about constraints for the editing frontend
         response = create_response_dict(result)
 
-        # Add permissions 
+        # Add permissions and current user
+        response["kerberosbruker"] = bugge.env["REMOTE_USER"]
+        response["redigere"] = cur_user_is_editor
+        response["slette"] = cur_user_is_deleter
 
         # Discard any items remaing in cursor. If any items do remain,
         # this will cause an exception. We ignore it.
