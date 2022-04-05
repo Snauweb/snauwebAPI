@@ -22,8 +22,32 @@ CREATE TABLE brukeralias (
 -- ONLY FOR TESTING
 CREATE TABLE "tbl_User" (
        userid SERIAL PRIMARY KEY,
-       username VARCHAR(30),
-       firstname VARCHAR(30)
+       username VARCHAR(30) DEFAULT NULL,
+       email VARCHAR(50) DEFAULT NULL,
+       firstname VARCHAR(30) DEFAULT NULL,
+       lastname VARCHAR(30) DEFAULT NULL,
+       birthdate DATE,
+       tlf VARCHAR(15),
+       adres VARCHAR(100) DEFAULT NULL,
+       study VARCHAR(40) DEFAULT NULL,
+       pass  VARCHAR(32) DEFAULT NULL,
+       active BOOLEAN,
+       altadres VARCHAR(100),
+       webpage VARCHAR(100),
+       begin DATE,
+       quit DATE,
+       comment TEXT,
+       gmlsnau BOOLEAN DEFAULT FALSE,
+       otherinfo TEXT,
+       nocontact BOOLEAN DEFAULT FALSE,
+       member BIGINT,
+       gjengmember BIGINT,
+       ukamember BIGINT,
+       pnr INTEGER DEFAULT 0,
+       psted VARCHAR(20),
+       country VARCHAR(20),
+       confirmed TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
+       pensioned BOOLEAN DEFAULT FALSE
 );
 
 -- Inserting the test user johalaf (kerberos alias "johanpålåfte")
@@ -32,3 +56,10 @@ INSERT INTO "tbl_User"
 VALUES
 (2, 'johalaf', 'johan@låfte.samfundet.no', 'johan', 'pålåfte', '01-01-1967', '0');
 
+-- Selecting all info for user with id=2
+SELECT
+userid, username, email, firstname, lastname, birthdate, tlf, adres, study,
+active, altadres, webpage, begin, quit, comment, gmlsnau, otherinfo, nocontact,
+pnr, psted, country, confirmed, pensioned
+FROM "tbl_User"
+WHERE userid=2;

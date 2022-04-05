@@ -76,9 +76,7 @@ def setup_POST(bugge):
             VALUES (%s, %s, %s, %s, %s)"
         cursor = bugge.get_DB_cursor()
         cursor.execute(query, [tittel, forslag, date_string, user_id, 1])
-        print("got past execution!", file=sys.stderr)
         bugge.commit_DB()
-        print("got past commit!", file=sys.stderr)
         bugge.respond_JSON(payload_dict, status=201)
         cursor.close()
     
