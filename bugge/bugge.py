@@ -190,12 +190,23 @@ class Bugge:
 
     # Internal route adder. The decorator wraps this method
     def add_route(self, handler, path, method):
+
+        # We remove trailing slashes
+        if(len(path) > 0  and path[-1] == "/"):
+            path = path[:len(path)-1]
+            
+        
         # Keyed by a concatenation of method and url
         # Only saves the handler function, not the context
         route_key = method + ":" + path
         self.routes[route_key] = handler
         
     def route_request(self, path, method):
+        # We ignore trailing slashes
+        if(len(path) > 0  and path[-1] == "/"):
+            path = path[:len(path)-1]
+
+ 
         route_key = method + ":" + path
 
         if route_key in self.routes:

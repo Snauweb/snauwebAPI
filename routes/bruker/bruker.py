@@ -103,10 +103,12 @@ def create_response_dict(result):
     
     result = {
         "id": {
-            "verdi": result[0]
+            "verdi": result[0],
+            "type": "tall"
         },
         "brukernavn": {
-            "verdi": result[1]
+            "verdi": result[1],
+            "type": "tekst"
         },
         "epost": {
             "verdi": result[2],
