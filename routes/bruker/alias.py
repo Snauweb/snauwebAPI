@@ -7,11 +7,11 @@ def setup_GET(bugge):
     def get_active_aliases():
         cursor = bugge.get_DB_cursor()
 
-        query = \
-            'SELECT username, brukeralias FROM \
-            (SELECT userid, username from "tbl_User") AS u \
-            INNER JOIN brukeralias AS b ON u.userid = b.brukerid \
-            '
+        query = """
+        SELECT username, brukeralias FROM
+        (SELECT userid, username from "tbl_User") AS u
+        INNER JOIN brukeralias AS b ON u.userid = b.brukerid
+        """
 
         cursor.execute(query);
 

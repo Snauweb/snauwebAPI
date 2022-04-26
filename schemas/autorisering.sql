@@ -52,3 +52,12 @@ INNER JOIN tilgangsgruppe_tilgang USING(gruppeid)
 INNER JOIN tilgang USING(tilgangid)
 WHERE brukerid=2 and resurs='forslag'
 GROUP BY handling;
+
+-- Example query for user of id 2 and all permissions for several resources
+SELECT resurs, handling
+FROM bruker_tilgangsgruppe
+INNER JOIN tilgangsgruppe USING(gruppeid)
+INNER JOIN tilgangsgruppe_tilgang USING(gruppeid)
+INNER JOIN tilgang USING(tilgangid)
+WHERE brukerid=2 and resurs in ('forslag', 'bruker')
+GROUP BY resurs, handling;

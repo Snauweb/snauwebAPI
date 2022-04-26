@@ -2,6 +2,8 @@ import json
 import os
 import sys
 
+from urllib.parse import parse_qs
+
 # The main purpose of this class is to abstract away the specific
 # database handler used
 # Support for
@@ -180,6 +182,9 @@ class Bugge:
             raise Exception("Config is not loaded")
         return self.config_dict
 
+    def get_URL_parameters(self):
+        return parse_qs(self.env["QUERY_STRING"])
+    
     ### Requests and routing
     # Decorator used to add route, to create a pattern resembeling flask
     def route(self, route, method):

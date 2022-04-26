@@ -23,6 +23,7 @@ import routes.reaksjon
 
 import routes.bruker
 import routes.bruker.alias
+import routes.bruker.rettigheter
 
 import routes.forslag
 
@@ -63,6 +64,10 @@ routes.bruker.alias.setup_routes(bugge)
 
 # *********** BRUKER ***********
 routes.bruker.setup_routes(bugge)
+
+# *********** RETTIGHETER ************
+routes.bruker.rettigheter.setup_routes(bugge)
+
 
 # *********** FORSLAG ***********
 routes.forslag.setup_routes(bugge)
